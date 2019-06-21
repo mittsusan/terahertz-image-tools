@@ -33,7 +33,7 @@ class CameraManager:
         print("initialize the camera")
         self.cam.Init()
 
-        # トリガーを初期化
+        # トリガーの設定を初期化
         print("initialize trigger type")
         self.choose_trigger_type(trigger_type)
 
@@ -78,7 +78,9 @@ class CameraManager:
 
     def __apply_trigger_type(self):
         # トリガーの設定を変更するため，トリガーモードを一時的にOFFにする
-        self.turn_off_trigger_mode()
+        is_trigger_mode = self.trigger_mode()
+        if is_trigger_mode:
+            self.turn_off_trigger_mode()
 
         # トリガーソースを選択
         nodemap = self.cam.GetNodeMap()
@@ -101,7 +103,17 @@ class CameraManager:
             node_trigger_source.SetIntValue(node_trigger_source_hardware.GetValue())
 
         # トリガーモードを再開する
-        self.turn_on_trigger_mode()
+        if is_trigger_mode:
+            self.turn_on_trigger_mode()
+
+    def trigger_mode(self):
+        nodemap = self.cam.GetNodeMap()
+
+        node_trigger_mode = PySpin.CEnumerationPtr(nodemap.GetNode("TriggerMode"))
+        if not PySpin.IsAvailable(node_trigger_mode) or not PySpin.IsReadable(node_trigger_mode):
+            raise RuntimeError("unable to turn off trigger mode (node retrieval)")
+
+        return bool(node_trigger_mode.GetIntValue())
 
     def turn_off_trigger_mode(self):
         print("turn off trigger mode")
