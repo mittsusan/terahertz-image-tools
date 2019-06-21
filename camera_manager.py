@@ -94,7 +94,7 @@ class CameraManager:
                 raise RuntimeError("unable to set trigger source (enum entry retrieval)")
             node_trigger_source.SetIntValue(node_trigger_source_software.GetValue())
         elif self.trigger_type == TriggerType.HARDWARE:
-            node_trigger_source_hardware = node_trigger_source.GetEntryByName('Line0')
+            node_trigger_source_hardware = node_trigger_source.GetEntryByName("Line0")
             if not PySpin.IsAvailable(node_trigger_source_hardware) \
                or not PySpin.IsReadable(node_trigger_source_hardware):
                 raise RuntimeError("unable to set trigger source (enum entry retrieval)")
