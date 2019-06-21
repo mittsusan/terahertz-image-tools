@@ -40,7 +40,10 @@ class CameraManager:
     def __del__(self):
         # カメラを解放
         print("destruct the camera")
-        del self.cam
+        try:
+            del self.cam
+        except AttributeError:
+            pass
 
         # カメラシステムを解放
         print("release the camera system")
