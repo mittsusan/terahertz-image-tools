@@ -131,3 +131,17 @@ class CameraManager:
             raise RuntimeError("unable to turn on trigger mode (enum entry retrieval)")
 
         node_trigger_mode.SetIntValue(node_trigger_mode_on.GetValue())
+
+    def choose_acquisition_mode(self, acquisition_mode):
+        print("acquisition mode: {}".format(acquisition_mode))
+        nodemap = self.cam.GetNodeMap()
+
+        node_acquisition_mode = PySpin.CEnumerationPtr(nodemap.GetNode("AcquisitionMode"))
+        if not PySpin.IsAvailable(node_acquisition_mode) or not PySpin.IsWritable(node_acquisition_mode):
+            raise RuntimeError("unable to set acquisition mode (enum retrieval)")
+
+        node_chosen_mode = node_acquisition_mode.GetEntryByName(acquisition_mode)
+        if not PySpin.IsAvailable(node_chosen_mode) or not PySpin.IsReadable(node_chosen_mode):
+            raise RuntimeError("unable to set acquisition mode (enum entry retrieval)")
+
+        node_acquisition_mode.SetIntValue(node_chosen_mode.GetValue())
