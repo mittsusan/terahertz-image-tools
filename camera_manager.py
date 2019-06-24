@@ -64,6 +64,12 @@ class CameraManager:
             print("not available")
         print("========================================")
 
+    def start_acquisition(self):
+        self.cam.BeginAcquisition()
+
+    def stop_acquisition(self):
+        self.cam.EndAcquisition()
+
     def choose_trigger_type(self, trigger_type):
         if trigger_type is TriggerType.SOFTWARE:
             print("software trigger chosen")
