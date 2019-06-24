@@ -18,6 +18,11 @@ class AutoExposureMode():
     OFF = "Off"
 
 
+class AutoGainMode():
+    ON = "On"
+    OFF = "Off"
+
+
 class CameraManager:
     def __init__(self, trigger_type=TriggerType.SOFTWARE):
         # カメラシステムを取得
@@ -170,3 +175,18 @@ class CameraManager:
         exposure_time_us = min(self.cam.ExposureTime.GetMax(), exposure_time_us)
         self.cam.ExposureTime.SetValue(exposure_time_us)
         print("exposure time: {}[us]".format(exposure_time_us))
+
+    def choose_auto_gain_mode(self, auto_gain_mode):
+        if self.cam.GainAuto.GetAccessMode() != PySpin.RW:
+            raise RuntimeError("unable to change auto gain mode")
+
+        print("auto gain mode: {}".format(auto_gain_mode))
+        if auto_gain_mode is AutoGainMode.ON:
+            self.cam.GainAuto.SetValue(PySpin.GainAuto_Continuous)
+        elif auto_gain_mode is AutoGainMode.OFF:
+            self.cam.GainAuto.SetValue(PySpin.GainAuto_Off)
+
+    def set_gain(self, gain_db):
+        gain_db = min(self.cam.Gain.GetMax(), gain_db)
+        self.cam.Gain.SetValue(gain_db)
+        print("gain: {}[dB]".format(gain_db))
