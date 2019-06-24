@@ -190,3 +190,26 @@ class CameraManager:
         gain_db = min(self.cam.Gain.GetMax(), gain_db)
         self.cam.Gain.SetValue(gain_db)
         print("gain: {}[dB]".format(gain_db))
+
+    def execute_software_trigger(self):
+        if self.cam.TriggerSoftware.GetAccessMode() != PySpin.WO:
+            raise RuntimeError("unable to execute trigger")
+
+        # PCからトリガーを送出
+        self.cam.TriggerSoftware.Execute()
+
+    def get_next_image(self, pixel_format=PySpin.PixelFormat_Mono8, color_algorithm=PySpin.NO_COLOR_PROCESSING):
+        # 画像を転送
+        img_captured = self.cam.GetNextImage()
+        if img_captured.IsIncomplete():
+            print("image incomplete with image status: ".format(img_captured.GetImageStatus()))
+            img_captured.Release()
+            return None
+
+        # np.arrayに変換
+        width = img_captured.GetWidth()
+        height = img_captured.GetHeight()
+        img_converted = img_captured.Convert(pixel_format, color_algorithm)
+        img_captured.Release()
+
+        return img_converted.GetData().reshape(width, height)
