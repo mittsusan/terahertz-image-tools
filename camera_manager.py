@@ -13,6 +13,11 @@ class AcquisitionMode():
     MULTI_FRAME = "MultiFrame"
 
 
+class AutoExposureMode():
+    ON = "On"
+    OFF = "Off"
+
+
 class CameraManager:
     def __init__(self, trigger_type=TriggerType.SOFTWARE):
         # カメラシステムを取得
@@ -145,3 +150,23 @@ class CameraManager:
             raise RuntimeError("unable to set acquisition mode (enum entry retrieval)")
 
         node_acquisition_mode.SetIntValue(node_chosen_mode.GetValue())
+
+    def choose_auto_exposure_mode(self, auto_exposure_mode):
+        if self.cam.ExposureAuto.GetAccessMode() != PySpin.RW:
+            raise RuntimeError("unable to change auto exposure mode")
+
+        print("auto exposure mode: {}".format(auto_exposure_mode))
+        if auto_exposure_mode is AutoExposureMode.ON:
+            self.cam.ExposureAuto.SetValue(PySpin.ExposureAuto_Continuous)
+        elif auto_exposure_mode is AutoExposureMode.OFF:
+            self.cam.ExposureAuto.SetValue(PySpin.ExposureAuto_Off)
+
+        if self.cam.ExposureMode.GetAccessMode() != PySpin.RW:
+            raise RuntimeError("unable to change exposure mode")
+
+        self.cam.ExposureMode.SetValue(PySpin.ExposureMode_Timed)
+
+    def set_exposure_time(self, exposure_time_us):
+        exposure_time_us = min(self.cam.ExposureTime.GetMax(), exposure_time_us)
+        self.cam.ExposureTime.SetValue(exposure_time_us)
+        print("exposure time: {}[us]".format(exposure_time_us))
