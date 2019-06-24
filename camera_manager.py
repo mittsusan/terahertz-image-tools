@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
-import enum
-
 import PySpin
 
 
-class TriggerType(enum.Enum):
-    SOFTWARE = 1
-    HARDWARE = 2
+class TriggerType():
+    SOFTWARE = "Software"
+    HARDWARE = "Line0"
+
+
+class AcquisitionMode():
+    CONTINUOUS = "Continuous"
+    SINGLE_FRAME = "SingleFrame"
+    MULTI_FRAME = "MultiFrame"
 
 
 class CameraManager:
@@ -32,10 +36,6 @@ class CameraManager:
         # カメラを初期化
         print("initialize the camera")
         self.cam.Init()
-
-        # トリガーの設定を初期化
-        print("initialize trigger type")
-        self.choose_trigger_type(trigger_type)
 
     def __del__(self):
         # カメラを解放
@@ -71,46 +71,27 @@ class CameraManager:
         self.cam.EndAcquisition()
 
     def choose_trigger_type(self, trigger_type):
-        if trigger_type is TriggerType.SOFTWARE:
-            print("software trigger chosen")
-            self.trigger_type = TriggerType.SOFTWARE
-        elif trigger_type is TriggerType.HARDWARE:
-            print("hardware trigger chosen")
-            self.trigger_type = TriggerType.HARDWARE
-        else:
-            raise RuntimeError("undefined trigger type")
-        # トリガーの設定を適用
-        self.__apply_trigger_type()
+        print("trigger type: {}".format(trigger_type))
 
-    def __apply_trigger_type(self):
         # トリガーの設定を変更するため，トリガーモードを一時的にOFFにする
-        is_trigger_mode = self.trigger_mode()
-        if is_trigger_mode:
-            self.turn_off_trigger_mode()
+        is_trigger_mode_now = self.trigger_mode()
+        if is_trigger_mode_now:
+            self.turn_off_trigger_mode(False)
 
-        # トリガーソースを選択
         nodemap = self.cam.GetNodeMap()
 
         node_trigger_source = PySpin.CEnumerationPtr(nodemap.GetNode("TriggerSource"))
         if not PySpin.IsAvailable(node_trigger_source) or not PySpin.IsWritable(node_trigger_source):
             raise RuntimeError("unable to get trigger source (node retrieval)")
 
-        if self.trigger_type == TriggerType.SOFTWARE:
-            node_trigger_source_software = node_trigger_source.GetEntryByName("Software")
-            if not PySpin.IsAvailable(node_trigger_source_software) \
-               or not PySpin.IsReadable(node_trigger_source_software):
-                raise RuntimeError("unable to set trigger source (enum entry retrieval)")
-            node_trigger_source.SetIntValue(node_trigger_source_software.GetValue())
-        elif self.trigger_type == TriggerType.HARDWARE:
-            node_trigger_source_hardware = node_trigger_source.GetEntryByName("Line0")
-            if not PySpin.IsAvailable(node_trigger_source_hardware) \
-               or not PySpin.IsReadable(node_trigger_source_hardware):
-                raise RuntimeError("unable to set trigger source (enum entry retrieval)")
-            node_trigger_source.SetIntValue(node_trigger_source_hardware.GetValue())
+        node_chosen_source = node_trigger_source.GetEntryByName(trigger_type)
+        if not PySpin.IsAvailable(node_chosen_source) or not PySpin.IsReadable(node_chosen_source):
+            raise RuntimeError("unable to set trigger source (enum entry retrieval)")
+        node_trigger_source.SetIntValue(node_chosen_source.GetValue())
 
         # トリガーモードを再開する
-        if is_trigger_mode:
-            self.turn_on_trigger_mode()
+        if is_trigger_mode_now:
+            self.turn_on_trigger_mode(False)
 
     def trigger_mode(self):
         nodemap = self.cam.GetNodeMap()
@@ -121,8 +102,9 @@ class CameraManager:
 
         return bool(node_trigger_mode.GetIntValue())
 
-    def turn_off_trigger_mode(self):
-        print("turn off trigger mode")
+    def turn_off_trigger_mode(self, stdout=True):
+        if stdout:
+            print("trigger mode: OFF")
         nodemap = self.cam.GetNodeMap()
 
         node_trigger_mode = PySpin.CEnumerationPtr(nodemap.GetNode("TriggerMode"))
@@ -135,8 +117,9 @@ class CameraManager:
 
         node_trigger_mode.SetIntValue(node_trigger_mode_off.GetValue())
 
-    def turn_on_trigger_mode(self):
-        print("turn on trigger mode")
+    def turn_on_trigger_mode(self, stdout=True):
+        if stdout:
+            print("trigger mode: ON")
         nodemap = self.cam.GetNodeMap()
 
         node_trigger_mode = PySpin.CEnumerationPtr(nodemap.GetNode("TriggerMode"))
