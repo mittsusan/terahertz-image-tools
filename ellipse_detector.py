@@ -75,10 +75,11 @@ class EllipseDetector:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=Path, help="image file path")
-    parser.add_argument("--output", type=Path, default=None, help="output path for ellipses")
+    parser.add_argument("--output", type=Path, default=None, help="directory path to dump ellipses")
     parser.add_argument("--min-size", default=100, type=int, help="minumum length of minor axes")
     parser.add_argument("--max-size", default=10000, type=int, help="maximum length of minor axes")
-    parser.add_argument("--bin-thresh", default=0, type=int, help="threshold for binarization (if zero, Otsu's method will be used)")
+    parser.add_argument("--bin-thresh", default=0, type=int, metavar="THRESH",
+                        help="threshold for binarization (if zero, Otsu's method will be used)")
     args = parser.parse_args()
 
     img = cv2.imread(str(args.input))
