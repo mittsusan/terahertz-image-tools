@@ -103,3 +103,7 @@ if __name__ == "__main__":
         args.output.mkdir(parents=True, exist_ok=True)
         for i, (ellipse, img) in enumerate(zip(ellipses, imgs)):
             cv2.imwrite(str(args.output / "{:02d}.png".format(i)), img)
+            # (中心x, 中心y, 短軸長, 長軸長, 回転角)の順で保存
+            np.savetxt(str(args.output / "{:02d}.txt".format(i)),
+                       np.array([ellipse[0][0], ellipse[0][1], ellipse[1][0], ellipse[1][1], ellipse[2]]),
+                       fmt="%.18f")
