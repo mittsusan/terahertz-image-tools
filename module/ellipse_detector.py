@@ -17,27 +17,34 @@ class Ellipse:
 
     def __add__(self, other):
         assert type(other) == self.__class__
-        return self.__class__(self.c_x + other.c_x, self.c_y + other.c_y,
-                              self.minor_ax + other.minor_ax, self.major_ax + other.major_ax,
-                              self.angle + other.angle)
+        return self.__class__(((self.c_x + other.c_x, self.c_y + other.c_y),
+                               (self.minor_ax + other.minor_ax, self.major_ax + other.major_ax),
+                               self.angle + other.angle))
 
     def __sub__(self, other):
         assert type(other) == self.__class__
-        return self.__class__(self.c_x - other.c_x, self.c_y - other.c_y,
-                              self.minor_ax - other.minor_ax, self.major_ax - other.major_ax,
-                              self.angle - other.angle)
+        return self.__class__(((self.c_x - other.c_x, self.c_y - other.c_y),
+                               (self.minor_ax - other.minor_ax, self.major_ax - other.major_ax),
+                               self.angle - other.angle))
 
     def __mul__(self, other):
         assert type(other) == int or type(other) == float
-        return self.__class__(self.c_x * other, self.c_y * other,
-                              self.minor_ax * other, self.major_ax * other,
-                              self.angle * other)
+        return self.__class__(((self.c_x * other, self.c_y * other),
+                               (self.minor_ax * other, self.major_ax * other),
+                               self.angle * other))
 
     def __truediv__(self, other):
         assert type(other) == int or type(other) == float
-        return self.__class__(self.c_x / other, self.c_y / other,
-                              self.minor_ax / other, self.major_ax / other,
-                              self.angle / other)
+        return self.__class__(((self.c_x / other, self.c_y / other),
+                               (self.minor_ax / other, self.major_ax / other),
+                               self.angle / other))
+
+    def __repr__(self):
+        return "{:<11}: {}\n".format("center x", self.c_x) + \
+               "{:<11}: {}\n".format("center y", self.c_y) + \
+               "{:<11}: {}\n".format("minor axis", self.minor_ax) + \
+               "{:<11}: {}\n".format("major axis", self.major_ax) + \
+               "{:<11}: {}".format("angle", self.angle)
 
     def create_mask(self, shape):
         ellipse = ((self.c_x, self.c_y), (self.minor_ax, self.major_ax), self.angle)
@@ -105,9 +112,9 @@ class EllipseDetector:
         return masks
 
     @staticmethod
-    def integrate_ellipse_masks(masks, show_numbers=True):
+    def integrate_ellipse_masks(masks, ellipses=None):
         int_mask = sum(masks)
-        if not show_numbers:
+        if ellipses is None:
             return int_mask
         for i, ellipse in enumerate(ellipses):
             assert type(ellipse) == Ellipse
@@ -138,7 +145,7 @@ if __name__ == "__main__":
     masks = detector.create_ellipse_masks(ellipses, img.shape)
 
     # 楕円マスクを統合
-    int_mask = detector.integrate_ellipse_masks(masks, True)
+    int_mask = detector.integrate_ellipse_masks(masks, ellipses)
 
     # 表示
     img = cv2.resize(img, None, fx=0.5, fy=0.5)
