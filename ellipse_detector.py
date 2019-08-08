@@ -69,6 +69,17 @@ class EllipseDetector:
             masks.append(mask)
         return masks
 
+    @staticmethod
+    def integrate_ellipse_masks(masks, show_numbers=True):
+        int_mask = sum(masks)
+        if not show_numbers:
+            return int_mask
+        for i, ellipse in enumerate(ellipses):
+            text_size = cv2.getTextSize(str(i), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1.3, thickness=3)
+            pos = (int(ellipse[0][0] - text_size[0][0] / 2), int(ellipse[0][1] + text_size[0][1] / 2))
+            cv2.putText(int_mask, str(i), pos, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1.3, thickness=3, color=(0, 0, 0))
+        return int_mask
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -91,10 +102,7 @@ if __name__ == "__main__":
     masks = detector.create_ellipse_masks(ellipses, img.shape)
 
     # 楕円マスクを統合
-    int_mask = sum(masks)
-    for i, ellipse in enumerate(ellipses):
-        pos = (int(ellipse[0][0] - 13), int(ellipse[0][1] + 13))
-        cv2.putText(int_mask, str(i), pos, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 3)
+    int_mask = detector.integrate_ellipse_masks(masks, True)
 
     # 表示
     img = cv2.resize(img, None, fx=0.5, fy=0.5)
