@@ -61,13 +61,13 @@ class EllipseDetector:
         return ellipses
 
     @staticmethod
-    def create_ellipse_images(ellipses, shape):
-        ellipse_imgs = []
+    def create_ellipse_masks(ellipses, shape):
+        masks = []
         for ellipse in ellipses:
             # 各楕円について，楕円を白で描画した画像を作成
-            ellipse_img = cv2.ellipse(np.zeros(shape[:2]), ellipse, (255, 255, 255), -1, cv2.LINE_4)
-            ellipse_imgs.append(ellipse_img)
-        return ellipse_imgs
+            mask = cv2.ellipse(np.zeros(shape[:2]), ellipse, (255, 255, 255), -1, cv2.LINE_4)
+            masks.append(mask)
+        return masks
 
 
 if __name__ == "__main__":
@@ -80,34 +80,35 @@ if __name__ == "__main__":
                         help="threshold for binarization (if zero, Otsu's method will be used)")
     args = parser.parse_args()
 
+    # 画像を読み込む
     img = cv2.imread(str(args.input))
 
     # 楕円を検出
     detector = EllipseDetector(args.min_size, args.max_size, args.bin_thresh)
     ellipses = detector.detect(img)
 
-    # 楕円画像マスクを作成
-    imgs = detector.create_ellipse_images(ellipses, img.shape)
+    # 楕円マスクを作成
+    masks = detector.create_ellipse_masks(ellipses, img.shape)
 
-    # 楕円画像マスクを合成
-    int_img = sum(imgs)
+    # 楕円マスクを統合
+    int_mask = sum(masks)
     for i, ellipse in enumerate(ellipses):
         pos = (int(ellipse[0][0] - 13), int(ellipse[0][1] + 13))
-        cv2.putText(int_img, str(i), pos, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 3)
+        cv2.putText(int_mask, str(i), pos, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 3)
 
     # 表示
     img = cv2.resize(img, None, fx=0.5, fy=0.5)
     cv2.imshow("input", img)
-    int_img = cv2.resize(int_img, None, fx=0.5, fy=0.5)
-    cv2.imshow("ellipses", int_img)
+    int_mask = cv2.resize(int_mask, None, fx=0.5, fy=0.5)
+    cv2.imshow("ellipses", int_mask)
     cv2.waitKey(0)
 
     # 保存
     if args.output is not None:
         args.output.mkdir(parents=True, exist_ok=True)
-        for i, (ellipse, img) in enumerate(zip(ellipses, imgs)):
-            # 楕円画像マスクを保存
-            cv2.imwrite(str(args.output / "{:02d}.png".format(i)), img)
+        for i, (ellipse, mask) in enumerate(zip(ellipses, masks)):
+            # 楕円マスクを保存
+            cv2.imwrite(str(args.output / "{:02d}.png".format(i)), mask)
             # (中心x, 中心y, 短軸長, 長軸長, 回転角)の順で保存
             np.savetxt(str(args.output / "{:02d}.txt".format(i)),
                        np.array([ellipse[0][0], ellipse[0][1], ellipse[1][0], ellipse[1][1], ellipse[2]]),
