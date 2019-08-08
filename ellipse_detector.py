@@ -6,6 +6,44 @@ from pathlib import Path
 import cv2
 
 
+class Ellipse:
+    def __init__(self, ellipse):
+        # ellipse = ([中心x, 中心y], [短軸長, 長軸長], 回転角)
+        self.c_x = ellipse[0][0]
+        self.c_y = ellipse[0][1]
+        self.minor_ax = ellipse[1][0]
+        self.major_ax = ellipse[1][1]
+        self.angle = ellipse[2]
+
+    def __add__(self, other):
+        assert type(other) == self.__class__
+        return self.__class__(self.c_x + other.c_x, self.c_y + other.c_y,
+                              self.minor_ax + other.minor_ax, self.major_ax + other.major_ax,
+                              self.angle + other.angle)
+
+    def __sub__(self, other):
+        assert type(other) == self.__class__
+        return self.__class__(self.c_x - other.c_x, self.c_y - other.c_y,
+                              self.minor_ax - other.minor_ax, self.major_ax - other.major_ax,
+                              self.angle - other.angle)
+
+    def __mul__(self, other):
+        assert type(other) == int or type(other) == float
+        return self.__class__(self.c_x * other, self.c_y * other,
+                              self.minor_ax * other, self.major_ax * other,
+                              self.angle * other)
+
+    def __truediv__(self, other):
+        assert type(other) == int or type(other) == float
+        return self.__class__(self.c_x / other, self.c_y / other,
+                              self.minor_ax / other, self.major_ax / other,
+                              self.angle / other)
+
+    def create_mask(self, shape):
+        ellipse = ((self.c_x, self.c_y), (self.minor_ax, self.major_ax), self.angle)
+        return cv2.ellipse(np.zeros(shape[:2]), ellipse, (255, 255, 255), -1, cv2.LINE_4)
+
+
 class EllipseDetector:
     def __init__(self, min_size=100, max_size=10000, bin_thresh=0):
         self.min_size = min_size
@@ -23,8 +61,7 @@ class EllipseDetector:
         ellipses = self.__detect_ellipses(contours)
 
         # 楕円中心のx座標の小さい順にソート
-        # ellipse = ([中心x, 中心y], [短軸長, 長軸長], 回転角)
-        ellipses = sorted(ellipses, key=lambda x: x[0][0])
+        ellipses = sorted(ellipses, key=lambda x: x.c_x)
 
         return ellipses
 
@@ -52,10 +89,9 @@ class EllipseDetector:
             # 楕円検出には最低5点以上必要
             if len(contour) < 5:
                 continue
-            ellipse = cv2.fitEllipse(contour)
+            ellipse = Ellipse(cv2.fitEllipse(contour))
             # 短軸の長さで判定
-            # ellipse = ([中心x, 中心y], [短軸長, 長軸長], 回転角)
-            if ellipse[1][0] < self.min_size or self.max_size < ellipse[1][0]:
+            if ellipse.minor_ax < self.min_size or self.max_size < ellipse.minor_ax:
                 continue
             ellipses.append(ellipse)
         return ellipses
@@ -64,9 +100,8 @@ class EllipseDetector:
     def create_ellipse_masks(ellipses, shape):
         masks = []
         for ellipse in ellipses:
-            # 各楕円について，楕円を白で描画した画像を作成
-            mask = cv2.ellipse(np.zeros(shape[:2]), ellipse, (255, 255, 255), -1, cv2.LINE_4)
-            masks.append(mask)
+            assert type(ellipse) == Ellipse
+            masks.append(ellipse.create_mask(shape))
         return masks
 
     @staticmethod
@@ -75,8 +110,9 @@ class EllipseDetector:
         if not show_numbers:
             return int_mask
         for i, ellipse in enumerate(ellipses):
+            assert type(ellipse) == Ellipse
             text_size = cv2.getTextSize(str(i), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1.3, thickness=3)
-            pos = (int(ellipse[0][0] - text_size[0][0] / 2), int(ellipse[0][1] + text_size[0][1] / 2))
+            pos = (int(ellipse.c_x - text_size[0][0] / 2), int(ellipse.c_y + text_size[0][1] / 2))
             cv2.putText(int_mask, str(i), pos, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1.3, thickness=3, color=(0, 0, 0))
         return int_mask
 
@@ -119,5 +155,5 @@ if __name__ == "__main__":
             cv2.imwrite(str(args.output / "{:02d}.png".format(i)), mask)
             # (中心x, 中心y, 短軸長, 長軸長, 回転角)の順で保存
             np.savetxt(str(args.output / "{:02d}.txt".format(i)),
-                       np.array([ellipse[0][0], ellipse[0][1], ellipse[1][0], ellipse[1][1], ellipse[2]]),
+                       np.array([ellipse.c_x, ellipse.c_y, ellipse.minor_ax, ellipse.major_ax, ellipse.angle]),
                        fmt="%.18f")
