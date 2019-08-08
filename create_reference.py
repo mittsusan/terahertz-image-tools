@@ -57,8 +57,10 @@ if __name__ == "__main__":
         ave_ellipses[beam].minor_ax = np.mean(minor_ax_list)
         ave_ellipses[beam].major_ax = np.mean(major_ax_list)
         ave_ellipses[beam].angle = np.median(angle_list)  # 角度は不連続点の問題があるためmedianを用いる
+        print("")
         print("[beam {}]".format(beam))
         print(ave_ellipses[beam])
+    print("")
 
     # 楕円マスクの可視化
     print("integrating ellipse masks ...")
