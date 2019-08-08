@@ -1,8 +1,8 @@
-from camera_manager import CameraManager
-from camera_manager import TriggerType
-from camera_manager import AcquisitionMode
-from camera_manager import AutoExposureMode
-from camera_manager import AutoGainMode
+from module.camera_manager import CameraManager
+from module.camera_manager import TriggerType
+from module.camera_manager import AcquisitionMode
+from module.camera_manager import AutoExposureMode
+from module.camera_manager import AutoGainMode
 
 import argparse
 from pathlib import Path
