@@ -26,10 +26,7 @@ class EllipseDetector:
         # ellipse = ([中心x, 中心y], [短軸長, 長軸長], 回転角)
         ellipses = sorted(ellipses, key=lambda x: x[0][0])
 
-        # 楕円画像を作成
-        ellipse_imgs = self.__create_ellipse_images(ellipses, bin_img.shape)
-
-        return ellipses, ellipse_imgs
+        return ellipses
 
     def __binarize(self, img):
         if 2 < len(img.shape):
@@ -63,11 +60,12 @@ class EllipseDetector:
             ellipses.append(ellipse)
         return ellipses
 
-    def __create_ellipse_images(self, ellipses, shape):
+    @staticmethod
+    def create_ellipse_images(ellipses, shape):
         ellipse_imgs = []
         for ellipse in ellipses:
             # 各楕円について，楕円を白で描画した画像を作成
-            ellipse_img = cv2.ellipse(np.zeros(shape), ellipse, (255, 255, 255), -1, cv2.LINE_4)
+            ellipse_img = cv2.ellipse(np.zeros(shape[:2]), ellipse, (255, 255, 255), -1, cv2.LINE_4)
             ellipse_imgs.append(ellipse_img)
         return ellipse_imgs
 
@@ -86,13 +84,18 @@ if __name__ == "__main__":
 
     # 楕円を検出
     detector = EllipseDetector(args.min_size, args.max_size, args.bin_thresh)
-    ellipses, imgs = detector.detect(img)
+    ellipses = detector.detect(img)
 
-    # 可視化
+    # 楕円画像マスクを作成
+    imgs = detector.create_ellipse_images(ellipses, img.shape)
+
+    # 楕円画像マスクを合成
     int_img = sum(imgs)
     for i, ellipse in enumerate(ellipses):
         pos = (int(ellipse[0][0] - 13), int(ellipse[0][1] + 13))
         cv2.putText(int_img, str(i), pos, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 3)
+
+    # 表示
     img = cv2.resize(img, None, fx=0.5, fy=0.5)
     cv2.imshow("input", img)
     int_img = cv2.resize(int_img, None, fx=0.5, fy=0.5)
@@ -103,6 +106,7 @@ if __name__ == "__main__":
     if args.output is not None:
         args.output.mkdir(parents=True, exist_ok=True)
         for i, (ellipse, img) in enumerate(zip(ellipses, imgs)):
+            # 楕円画像マスクを保存
             cv2.imwrite(str(args.output / "{:02d}.png".format(i)), img)
             # (中心x, 中心y, 短軸長, 長軸長, 回転角)の順で保存
             np.savetxt(str(args.output / "{:02d}.txt".format(i)),
