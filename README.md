@@ -101,7 +101,7 @@ $ python -c "import PySpin"
 
 ## 使い方
 
-### `accumulate_intensity.py`
+### `acquire_image.py`
 
 オプションは以下の通り  
 デフォルト値はプログラムを参照してください
@@ -115,7 +115,7 @@ $ python -c "import PySpin"
 以下のように実行する
 
 ```
-$ python accumulate_intensity.py hardware --exp 20000 --gain 10 --save-dir /path/to/save/dir --num-imgs 100
+$ python acquire_image.py hardware --exp 20000 --gain 10 --save-dir /path/to/save/dir --num-imgs 100
 ```
 
 サンプルプログラムでは自動露出をOFF，撮影モードをCONTINUOUSにしているが，プログラムを変更することでこれらを切り替えることも可能である
@@ -173,6 +173,7 @@ integrating ellipse masks ...
 saving ellipse information to ref ...
 ```
 
+各ビームに，左から順に連番が振られる  
 統合された楕円マスクが表示され，`ref`に楕円パラメータと楕円マスクが保存される
 
 ### `accumulate_intensity.py`
@@ -187,7 +188,7 @@ saving ellipse information to ref ...
 以下のように実行する
 
 ```
-$ python accumulate_intensity.py ref sample\Si_0_05mm
+$ python accumulate_intensity.py ref sample\Si_0_05mm --num-beams 3
 
 image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000000.png
 ------------------------------
