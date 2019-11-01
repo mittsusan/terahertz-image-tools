@@ -6,6 +6,7 @@ from module.camera_manager import AutoGainMode
 
 import argparse
 from pathlib import Path
+import time
 
 import cv2
 
@@ -38,6 +39,8 @@ if __name__ == "__main__":
     cam_manager.start_acquisition()
 
     while True:
+        # 処理前の時刻
+        t1 = time.time()
         if args.trigger == "software":
             cam_manager.execute_software_trigger()
 
@@ -50,5 +53,10 @@ if __name__ == "__main__":
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+        # 処理後の時刻
+        t2 = time.time()
 
+        # 経過時間を表示
+        freq = 1 / (t2 - t1)
+        print(f"フレームレート：{freq}fps")
     cam_manager.stop_acquisition()

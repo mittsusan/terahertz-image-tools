@@ -3,16 +3,20 @@ import threading
 from PIL import Image,ImageTk
 import cv2
 import numpy as np
-from module.camera_manager import CameraManager
-from module.camera_manager import TriggerType
-from module.camera_manager import AcquisitionMode
-from module.camera_manager import AutoExposureMode
-from module.camera_manager import AutoGainMode
+
 import tkinter.filedialog as tkfd
+import time
+
+from pathlib import Path
+from module.create_reference import CreateReference
+from module.show_infrared_camera import ShowInfraredCamera
+from module.accumulate_intensity import AccumulateIntensity
 
 class GUI:
     def __init__(self):
-        self.cvv=Show_Infrared_Camera()
+        self.cvv=ShowInfraredCamera()
+        self.create_reference = CreateReference()
+        self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
         self._job = None
         self.cancelflag = False
@@ -25,14 +29,21 @@ class GUI:
         self.root.geometry(str(self.ROOT_X) + "x" + str(self.ROOT_Y))
         self.root.resizable(width=0, height=0)
         self.savepath = ''
+        self.inputpath = ''
+        self.outputpath = ''
+        self.accum_inputpath = ''
         self.firstFrame()#トリガー、ゲイン、露出、保存を決めるフレーム
-        self.secondFrame()#リアルタイムの画像を表示させるフレーム
+        #self.secondFrame()#リアルタイムの画像を表示させるフレーム
+        self.ellipseFrame()
 
 
 
-    def afterMSec(self,trigger,gain,exp):
+    def showbeam_ingui(self,trigger,gain,exp):
 
         while True:
+            # 処理前の時刻
+            t1 = time.time()
+
             self.cvv.cameraFrame(trigger,gain,exp)
             if self.savecount != 0:
                 cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), self.cvv.frame)
@@ -46,6 +57,52 @@ class GUI:
                 print('Complete Cancel')
                 self.cancelflag = False
                 break
+
+            # 処理後の時刻
+            t2 = time.time()
+
+            # 経過時間を表示
+            freq = 1/(t2 - t1)
+            print(f"フレームレート：{freq}fps")
+
+    def showbeam_imshow(self,trigger,gain,exp):
+        while True:
+            # 処理前の時刻
+            t1 = time.time()
+            self.cvv.cameraFrame(trigger,gain,exp)
+            if self.savecount != 0:
+                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), self.cvv.frame)
+                self.savecount += -1
+                print('saveimage:{}'.format(self.savecount))
+
+            if self.cvv.frame is None:
+                continue
+
+            cv2.imshow("Showing image(閉じる際はqボタンを押してください)", cv2.resize(self.cvv.frame, (1024, 1024)))
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cv2.destroyAllWindows()
+                print('Complete Cancel')
+
+                self.button2.config(state="disabled")
+                self.button3.config(state="active")
+                self.save.config(state="disabled")
+                break
+            '''
+            if self.cancelflag:
+                cv2.destroyAllWindows()
+                self.cancelflag = False
+                print('Complete Cancel')
+
+                break
+            '''
+
+            # 処理後の時刻
+            t2 = time.time()
+
+            # 経過時間を表示
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
 
     def cancel(self):
         self.cancelflag = True
@@ -77,7 +134,7 @@ class GUI:
 
         # ゲインのテキストボックスを出現させる
         gainEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
-        gainEntry.insert(tk.END, u'10')  # 最初から文字を入れておく
+        gainEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
         gainEntry.place(x=200, y=70)
 
         # 露出のテキストボックスを出現させる
@@ -106,25 +163,25 @@ class GUI:
             expEntry_value = expEntry.get()
             expEntry_value = int(expEntry_value)
             self.cvv.configure(trigger_type,gainEntry_value,expEntry_value)
-            th = threading.Thread(target=self.afterMSec, args=(trigger_type,gainEntry_value,expEntry_value))
+            th = threading.Thread(target=self.showbeam_imshow, args=(trigger_type,gainEntry_value,expEntry_value))
             th.start()
-            button1.config(state="disabled")
-            button2.config(state="active")
-            save.config(state="active")
+            self.button1.config(state="disabled")
+            self.button2.config(state="active")
+            self.save.config(state="active")
 
 
         def button2_clicked():
             self.cancel()
             print('Cancel')
-            button2.config(state="disabled")
-            button3.config(state="active")
-            save.config(state="disabled")
+            self.button2.config(state="disabled")
+            self.button3.config(state="active")
+            self.save.config(state="disabled")
 
         def button3_clicked():
             self.cvv.cam_manager.stop_acquisition()
             print('Stop')
-            button3.config(state="disabled")
-            button1.config(state="active")
+            self.button3.config(state="disabled")
+            self.button1.config(state="active")
 
         def selectdir_clicked():
             self.savepath = tkfd.askdirectory(initialdir='/')
@@ -139,20 +196,20 @@ class GUI:
 
 
 
-        button1 = tk.Button(text='OK',command=button1_clicked)
-        button1.place(x=50, y=110)
+        self.button1 = tk.Button(text='OK',command=button1_clicked)
+        self.button1.place(x=50, y=110)
 
-        button2 = tk.Button(text='Cancel', command=button2_clicked,state='disabled')
-        button2.place(x=90, y=110)
+        self.button2 = tk.Button(text='Cancel', command=button2_clicked,state='disabled')
+        self.button2.place(x=90, y=110)
 
-        button3 = tk.Button(text='STOP', command=button3_clicked,state='disabled')
-        button3.place(x=150, y=110)
+        self.button3 = tk.Button(text='STOP', command=button3_clicked,state='disabled')
+        self.button3.place(x=150, y=110)
 
-        selectdir = tk.Button(text='Select', command=selectdir_clicked)
-        selectdir.place(x=800, y=25)
+        self.selectdir = tk.Button(text='Select', command=selectdir_clicked)
+        self.selectdir.place(x=800, y=25)
 
-        save = tk.Button(text='Save', command=save_clicked,state='disabled')
-        save.place(x=480, y=80)
+        self.save = tk.Button(text='Save', command=save_clicked,state='disabled')
+        self.save.place(x=480, y=80)
 
 
 
@@ -162,39 +219,90 @@ class GUI:
         self.canvas.create_rectangle(0, 0, self.CANVAS_X, self.CANVAS_Y, fill="#696969")
         self.canvas.place(x=300, y=200)
 
+    def ellipseFrame(self):
+        # ラベル
+        labelx = 30
+        labely = 200
+        txtmovex = 470
+        lbl = tk.Label(text='楕円検出用リファレンス画像を保存したディレクトリを選択してください。')
+        lbl.place(x=labelx, y=labely)
+        lbl = tk.Label(text='楕円パラメータと楕円マスクを保存するディレクトリを選択してください。(楕円積算にも使用!!)')
+        lbl.place(x=labelx, y=labely+20)
+        lbl = tk.Label(text='ビームの本数を選択してください(楕円積算にも使用!!)')
+        lbl.place(x=labelx, y=labely+40)
+        lbl = tk.Label(text='楕円の短軸長の最小閾値を選択してください。')
+        lbl.place(x=labelx, y=labely+60)
+        lbl = tk.Label(text='楕円の短軸長の最大閾値を選択してください。')
+        lbl.place(x=labelx, y=labely+80)
+        lbl = tk.Label(text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。')
+        lbl.place(x=labelx, y=labely+100)
+        lbl = tk.Label(text='積算したい入力画像を格納したディレクトリを選択してください。')
+        lbl.place(x=labelx, y=labely + 150)
 
 
+        # テキストボックス
+        inputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        inputEntry.place(x=labelx+txtmovex, y=labely)
+        outputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        outputEntry.place(x=labelx+txtmovex, y=labely+20)
+        beamsEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        beamsEntry.insert(tk.END, u'3')  # 最初から文字を入れておく
+        beamsEntry.place(x=labelx+txtmovex, y=labely +40)
+        minEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        minEntry.insert(tk.END, u'100')  # 最初から文字を入れておく
+        minEntry.place(x=labelx+txtmovex, y=labely +60)
+        maxEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        maxEntry.insert(tk.END, u'10000')  # 最初から文字を入れておく
+        maxEntry.place(x=labelx+txtmovex, y=labely +80)
+        threshEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        threshEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
+        threshEntry.place(x=labelx+txtmovex, y=labely +100)
+        accuminputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        accuminputEntry.place(x=labelx + txtmovex, y=labely + 150)
 
-class Show_Infrared_Camera:
-    def __init__(self):
-        self.cam_manager = CameraManager()
-    def configure(self,trigger,gain,exp):
+        def inputdir_clicked():
+            self.inputpath = tkfd.askdirectory(initialdir='/')
+            inputEntry.insert(tk.END, self.inputpath)
+            print('Select')
+            print(self.inputpath)
 
+        def outputdir_clicked():
+            self.outputpath = tkfd.askdirectory(initialdir='/')
+            outputEntry.insert(tk.END, self.outputpath)
+            print('Select')
+            print(self.outputpath)
 
-        if trigger == "software":
-            self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
-        elif trigger == "hardware":
-            self.cam_manager.choose_trigger_type(TriggerType.HARDWARE)
+        def getref_ellipse_clicked():
+            input = Path(inputEntry.get())
+            output = Path(outputEntry.get())
+            numbeams = int(beamsEntry.get())
+            minsize = int(minEntry.get())
+            maxsize = int(maxEntry.get())
+            binthresh = int(threshEntry.get())
+            self.create_reference.main(input,output,numbeams,minsize,maxsize,binthresh)
 
-        self.cam_manager.turn_on_trigger_mode()
+        def accum_inputdir_clicked():
+            self.accum_inputpath = tkfd.askdirectory(initialdir='/')
+            accuminputEntry.insert(tk.END, self.accum_inputpath)
+            print('Select')
+            print(self.accum_inputpath)
 
-        self.cam_manager.choose_acquisition_mode(AcquisitionMode.CONTINUOUS)
+        def accum_ellipse_clicked():
+            ref = Path(outputEntry.get())
+            input = Path(accuminputEntry.get())
+            numbeams = int(beamsEntry.get())
+            self.accumulate_intensity.main(ref,input,numbeams)
 
-        self.cam_manager.choose_auto_exposure_mode(AutoExposureMode.OFF)
-        self.cam_manager.set_exposure_time(exp)
-
-        self.cam_manager.choose_auto_gain_mode(AutoGainMode.OFF)
-        self.cam_manager.set_gain(gain)
-
-        self.cam_manager.start_acquisition()
-
-    def cameraFrame(self,trigger,gain,exp):
-
-        if trigger == "software":
-            self.cam_manager.execute_software_trigger()
-
-        self.frame = self.cam_manager.get_next_image()
-        #self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+        self.inputdir = tk.Button(text='Select', command=inputdir_clicked)
+        self.inputdir.place(x=labelx+txtmovex+250, y=labely-10)
+        self.outputdir = tk.Button(text='Select', command=outputdir_clicked)
+        self.outputdir.place(x=labelx+txtmovex+250, y=labely + 20)
+        self.getref_ellipse = tk.Button(text='Get Ellipse', command=getref_ellipse_clicked)
+        self.getref_ellipse.place(x=labelx+200, y=labely + 120)
+        self.accum_inputdir = tk.Button(text='Select', command=accum_inputdir_clicked)
+        self.accum_inputdir.place(x=labelx + txtmovex + 250, y=labely+150)
+        self.accum_ellipse = tk.Button(text='Accumulate intensity of ellipse', command=accum_ellipse_clicked)
+        self.accum_ellipse.place(x=labelx + 200, y=labely + 170)
 
 
 
