@@ -3,7 +3,7 @@ import threading
 from PIL import Image,ImageTk
 import cv2
 import numpy as np
-
+import sys
 import tkinter.filedialog as tkfd
 import time
 
@@ -14,15 +14,15 @@ from module.accumulate_intensity import AccumulateIntensity
 
 class GUI:
     def __init__(self):
-        self.cvv=ShowInfraredCamera()
+        #self.cvv=ShowInfraredCamera()
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
         self._job = None
         self.cancelflag = False
         self.savecount = 0
-        self.ROOT_X = 1000
-        self.ROOT_Y = 700
+        self.ROOT_X = 1300
+        self.ROOT_Y = 850
         self.CANVAS_X=640
         self.CANVAS_Y=480
         self.root.title(u"RealtimeBeamImage")
@@ -35,6 +35,7 @@ class GUI:
         self.firstFrame()#トリガー、ゲイン、露出、保存を決めるフレーム
         #self.secondFrame()#リアルタイムの画像を表示させるフレーム
         self.ellipseFrame()
+        self.dnn_frame()
 
 
 
@@ -172,27 +173,22 @@ class GUI:
 
         def button2_clicked():
             self.cancel()
-            print('Cancel')
             self.button2.config(state="disabled")
             self.button3.config(state="active")
             self.save.config(state="disabled")
 
         def button3_clicked():
             self.cvv.cam_manager.stop_acquisition()
-            print('Stop')
             self.button3.config(state="disabled")
             self.button1.config(state="active")
 
         def selectdir_clicked():
-            self.savepath = tkfd.askdirectory(initialdir='/')
+            self.savepath = tkfd.askdirectory()
             saveEntry.insert(tk.END, self.savepath)
-            print('Select')
-            print(self.savepath)
 
         def save_clicked():
             numEntry_value = gainEntry.get()
             self.savecount = int(numEntry_value)
-            print('Save')
 
 
 
@@ -238,7 +234,8 @@ class GUI:
         lbl.place(x=labelx, y=labely+100)
         lbl = tk.Label(text='積算したい入力画像を格納したディレクトリを選択してください。')
         lbl.place(x=labelx, y=labely + 150)
-
+        lbl = tk.Label(text='積算データを保存するディレクトリを選択してください。')
+        lbl.place(x=labelx, y=labely + 170)
 
         # テキストボックス
         inputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
@@ -259,18 +256,16 @@ class GUI:
         threshEntry.place(x=labelx+txtmovex, y=labely +100)
         accuminputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
         accuminputEntry.place(x=labelx + txtmovex, y=labely + 150)
+        accumoutputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        accumoutputEntry.place(x=labelx + txtmovex, y=labely + 170)
 
         def inputdir_clicked():
-            self.inputpath = tkfd.askdirectory(initialdir='/')
+            self.inputpath = tkfd.askdirectory()
             inputEntry.insert(tk.END, self.inputpath)
-            print('Select')
-            print(self.inputpath)
 
         def outputdir_clicked():
-            self.outputpath = tkfd.askdirectory(initialdir='/')
+            self.outputpath = tkfd.askdirectory()
             outputEntry.insert(tk.END, self.outputpath)
-            print('Select')
-            print(self.outputpath)
 
         def getref_ellipse_clicked():
             input = Path(inputEntry.get())
@@ -282,16 +277,21 @@ class GUI:
             self.create_reference.main(input,output,numbeams,minsize,maxsize,binthresh)
 
         def accum_inputdir_clicked():
-            self.accum_inputpath = tkfd.askdirectory(initialdir='/')
+            self.accum_inputpath = tkfd.askdirectory()
             accuminputEntry.insert(tk.END, self.accum_inputpath)
-            print('Select')
-            print(self.accum_inputpath)
+
+
+        def accum_outputdir_clicked():
+            self.accum_outputpath = tkfd.askdirectory()
+            accumoutputEntry.insert(tk.END, self.accum_outputpath)
+
 
         def accum_ellipse_clicked():
             ref = Path(outputEntry.get())
             input = Path(accuminputEntry.get())
+            output = accumoutputEntry.get()
             numbeams = int(beamsEntry.get())
-            self.accumulate_intensity.main(ref,input,numbeams)
+            self.accumulate_intensity.main(ref,input,output,numbeams)
 
         self.inputdir = tk.Button(text='Select', command=inputdir_clicked)
         self.inputdir.place(x=labelx+txtmovex+250, y=labely-10)
@@ -300,10 +300,54 @@ class GUI:
         self.getref_ellipse = tk.Button(text='Get Ellipse', command=getref_ellipse_clicked)
         self.getref_ellipse.place(x=labelx+200, y=labely + 120)
         self.accum_inputdir = tk.Button(text='Select', command=accum_inputdir_clicked)
-        self.accum_inputdir.place(x=labelx + txtmovex + 250, y=labely+150)
+        self.accum_inputdir.place(x=labelx + txtmovex + 250, y=labely+140)
+        self.accum_outputdir = tk.Button(text='Select', command=accum_outputdir_clicked)
+        self.accum_outputdir.place(x=labelx + txtmovex + 250, y=labely + 170)
         self.accum_ellipse = tk.Button(text='Accumulate intensity of ellipse', command=accum_ellipse_clicked)
-        self.accum_ellipse.place(x=labelx + 200, y=labely + 170)
+        self.accum_ellipse.place(x=labelx + 200, y=labely + 190)
 
+    def dnn_frame(self):
+        # ラベル
+        labelx = 30
+        labely = 450
+        txtmovex = 150
+        lbl = tk.Label(text='クラス数を選択してください。')
+        lbl.place(x=labelx, y=labely)
+        lbl = tk.Label(text='クラス名')
+        lbl.place(x=labelx+300, y=labely-20)
+        lbl = tk.Label(text='訓練(train)フォルダ')
+        lbl.place(x=labelx + 400, y=labely - 20)
+        lbl = tk.Label(text='検証(validation)フォルダ')
+        lbl.place(x=labelx + 650, y=labely - 20)
+        # テキストボックスw
+        classEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        classEntry.insert(tk.END, u'2')  # 最初から文字を入れておく
+        classEntry.place(x=labelx + txtmovex, y=labely)
+
+        def class_clicked():
+            classcount = int(classEntry.get())
+            try:
+                for index in range(classcount):
+                    #execは""で書かないとstrが打ち込めない！！
+                    exec('classnum%d = tk.Entry(width=10)'%(index))
+                    exec('classnum%d.place(x=%d+300, y=450 + %d*20)'%(index,labelx,index))
+                    exec('classtraindir%d = tk.Entry(width=40)' % (index))
+                    exec('classtraindir%d.place(x=%d+400, y=450 + %d*20)' % (index, labelx, index))
+                    exec('classvaldir%d = tk.Entry(width=40)' % (index))
+                    exec('classvaldir%d.place(x=%d+650, y=450 + %d*20)' % (index, labelx, index))
+                    exec("classtrainpath%d = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')" % (index))
+                    exec('classtraindir%d.insert(tk.END, classtrainpath%d)' % (index,index))
+                    exec("classvalpath%d = tkfd.askdirectory(title='検証(val)フォルダを選択してください')" % (index))
+                    exec('classvaldir%d.insert(tk.END, classvalpath%d)' % (index, index))
+                    print('Select')
+                    #exec('classbutton%d = tk.Button(text=%s, command=classbutton_clicked(%d))' % (index,OK,index))
+                    #exec('classbutton%d.place(x=%d+480, y=450 + %d*20)' % (index, labelx, index))
+            except KeyboardInterrupt:
+                sys.exit(0)
+            print('OK')
+
+        self.class_num = tk.Button(text='OK', command=class_clicked)
+        self.class_num.place(x=labelx + txtmovex+80 , y=labely-5)
 
 
 class Main:
