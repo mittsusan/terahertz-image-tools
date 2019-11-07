@@ -4,6 +4,7 @@ from PIL import Image,ImageTk
 import cv2
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 import tkinter.filedialog as tkfd
 import time
 
@@ -11,6 +12,8 @@ from pathlib import Path
 from module.create_reference import CreateReference
 from module.show_infrared_camera import ShowInfraredCamera
 from module.accumulate_intensity import AccumulateIntensity
+from module.dnn import DNNClasifier
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class GUI:
     def __init__(self):
@@ -25,7 +28,7 @@ class GUI:
         self.ROOT_Y = 850
         self.CANVAS_X=640
         self.CANVAS_Y=480
-        self.root.title(u"RealtimeBeamImage")
+        self.root.title(u"Real-time Beam Identification made by Mitsuhashi")
         self.root.geometry(str(self.ROOT_X) + "x" + str(self.ROOT_Y))
         self.root.resizable(width=0, height=0)
         self.savepath = ''
@@ -131,8 +134,6 @@ class GUI:
             rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
             rdo.place(x=200, y=15 + (i * 24))
 
-
-
         # ゲインのテキストボックスを出現させる
         gainEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
         gainEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
@@ -151,9 +152,6 @@ class GUI:
         numEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
         numEntry.insert(tk.END, u'10')  # 最初から文字を入れておく
         numEntry.place(x=550, y=60)
-
-
-
 
         def button1_clicked():
             # 値を取得
@@ -313,41 +311,116 @@ class GUI:
         txtmovex = 150
         lbl = tk.Label(text='クラス数を選択してください。')
         lbl.place(x=labelx, y=labely)
-        lbl = tk.Label(text='クラス名')
-        lbl.place(x=labelx+300, y=labely-20)
+        #lbl = tk.Label(text='クラス名')
+        #lbl.place(x=labelx+300, y=labely-20)
         lbl = tk.Label(text='訓練(train)フォルダ')
-        lbl.place(x=labelx + 400, y=labely - 20)
+        lbl.place(x=labelx + 300, y=labely - 20)
         lbl = tk.Label(text='検証(validation)フォルダ')
-        lbl.place(x=labelx + 650, y=labely - 20)
+        lbl.place(x=labelx + 600, y=labely - 20)
+        lbl = tk.Label(text='ビームの数or画像')
+        lbl.place(x=labelx + 870, y=labely - 20)
         # テキストボックスw
         classEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
-        classEntry.insert(tk.END, u'2')  # 最初から文字を入れておく
+        classEntry.insert(tk.END, u'4')  # 最初から文字を入れておく
         classEntry.place(x=labelx + txtmovex, y=labely)
+        trainEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
+        trainEntry.place(x=300, y=450)
+        valEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        valEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/validation')
+        valEntry.place(x=600, y=450)
 
+        # ラジオボタンのラベルをリスト化する
+        rdo_txt = ['image','1', '2', '3', '4', '5', '6', '7', '8', '9 ', '10']
+        # ラジオボタンの状態
+        rdo_var = tk.IntVar()
+        # ラジオボタンを動的に作成して配置
+        for i in range(6):
+            rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
+            rdo.place(x=900, y=450+ (i * 24))
+        for i in range(6,len(rdo_txt)):
+            rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
+            rdo.place(x=980, y=450+ ((i-6) * 24))
+
+        '''
+        フォルダを分割して選択する場合
         def class_clicked():
             classcount = int(classEntry.get())
-            try:
-                for index in range(classcount):
-                    #execは""で書かないとstrが打ち込めない！！
-                    exec('classnum%d = tk.Entry(width=10)'%(index))
-                    exec('classnum%d.place(x=%d+300, y=450 + %d*20)'%(index,labelx,index))
-                    exec('classtraindir%d = tk.Entry(width=40)' % (index))
-                    exec('classtraindir%d.place(x=%d+400, y=450 + %d*20)' % (index, labelx, index))
-                    exec('classvaldir%d = tk.Entry(width=40)' % (index))
-                    exec('classvaldir%d.place(x=%d+650, y=450 + %d*20)' % (index, labelx, index))
-                    exec("classtrainpath%d = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')" % (index))
-                    exec('classtraindir%d.insert(tk.END, classtrainpath%d)' % (index,index))
-                    exec("classvalpath%d = tkfd.askdirectory(title='検証(val)フォルダを選択してください')" % (index))
-                    exec('classvaldir%d.insert(tk.END, classvalpath%d)' % (index, index))
-                    print('Select')
-                    #exec('classbutton%d = tk.Button(text=%s, command=classbutton_clicked(%d))' % (index,OK,index))
-                    #exec('classbutton%d.place(x=%d+480, y=450 + %d*20)' % (index, labelx, index))
-            except KeyboardInterrupt:
-                sys.exit(0)
-            print('OK')
+            self.trainbutton.config(state='active')
+            for index in range(classcount):
+                # execは""で書かないとstrが打ち込めない！！
+                exec('classnum%d = tk.Entry(width=10)' % (index))
+                exec('classnum%d.place(x=%d+300, y=450 + %d*20)' % (index, labelx, index))
+                exec('classtraindir%d = tk.Entry(width=40)' % (index))
+                exec('classtraindir%d.place(x=%d+400, y=450 + %d*20)' % (index, labelx, index))
+                exec('classvaldir%d = tk.Entry(wi dth=40)' % (index))
+                exec('classvaldir%d.place(x=%d+650, y=450 + %d*20)' % (index, labelx, index))
+                exec("classtrainpath%d = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')" % (index))
+                exec('classtraindir%d.insert(tk.END, classtrainpath%d)' % (index, index))
+                exec("classvalpath%d = tkfd.askdirectory(title='検証(val)フォルダを選択してください')" % (index))
+                exec('classvaldir%d.insert(tk.END, classvalpath%d)' % (index, index))
+                print('Select')
+    
+            ボタン形式下記作成途中
+            def classtrainbutton_clicked(index):
+                exec("classtrainpath{} = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')".format(index))
+                exec("classtraindir{0}.insert(tk.END, classtrainpath{0})".format(index))
 
-        self.class_num = tk.Button(text='OK', command=class_clicked)
-        self.class_num.place(x=labelx + txtmovex+80 , y=labely-5)
+            def classvalbutton_clicked(index):
+                exec("classvalpath%d = tkfd.askdirectory(title='検証(val)フォルダを選択してください')" % (index))
+                exec('classvaldir%d.insert(tk.END, classvalpath%d)' % (index, index))
+
+            for index in range(classcount):
+                #execは""で書かないとstrが打ち込めない！！
+                exec('classnum{} = tk.Entry(width=10)'.format(index))
+                exec('classnum%d.place(x=%d+300, y=450 + %d*20)'%(index,labelx,index))
+                exec('classtraindir%d = tk.Entry(width=40)' % (index))
+                exec('classtraindir%d.place(x=%d+400, y=450 + %d*20)' % (index, labelx, index))
+                exec('classvaldir%d = tk.Entry(width=40)' % (index))
+                exec('classvaldir%d.place(x=%d+700, y=450 + %d*20)' % (index, labelx, index))
+                exec("classtrainbutton%d = tk.Button(text='Select', command=lambda: classtrainbutton_clicked(%d))"%(index,index))
+                exec("classtrainbutton{0}.place(x={1}+600, y=440 + {0}*25)".format(index,labelx))
+                #classtrainbutton = tk.Button(text='Select', command=lambda: classtrainbutton_clicked(index))
+                #classtrainbutton.place(x=labelx+600, y=440 + index*25)
+            '''
+
+        def trainfolderbutton_clicked():
+            trainpath = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')
+            trainEntry.insert(tk.END, trainpath)
+
+        def valfolderbutton_clicked():
+            valpath = tkfd.askdirectory(title='検証(val)フォルダを選択してください')
+            valEntry.insert(tk.END, valpath)
+
+        def dnn_train_clicked():
+            classcount = int(classEntry.get())
+            imtype = rdo_txt[rdo_var.get()]
+            '''
+            traindirlist = []
+            valdirlist = []
+            for index in range(classcount):
+                exec("traindirlist.append(classtraindir%d)"%(index))
+                exec("valdirlist.append(classvaldir%d)" % (index))
+            print(traindirlist)
+            DNNClasifier(traindirlist,valdirlist,classcount)
+            '''
+            dnn_classifier = DNNClasifier(imtype,trainEntry.get(),valEntry.get(),classcount)
+            th = threading.Thread(target=dnn_classifier.train(), )
+            th.start()
+            return
+
+        #self.class_num = tk.Button(text='OK', command=class_clicked)
+        #self.class_num.place(x=labelx + txtmovex+80, y=labely-5)
+
+        self.trainbutton = tk.Button(text='訓練', command=dnn_train_clicked)
+        self.trainbutton.place(x=labelx+1000, y=labely)
+
+        self.trainfolderbutton= tk.Button(text='Select', command=trainfolderbutton_clicked)
+        self.trainfolderbutton.place(x=labelx + 500, y=450)
+
+        self.valfolderbutton = tk.Button(text='Select', command=valfolderbutton_clicked)
+        self.valfolderbutton.place(x=labelx + 800, y=450)
+
 
 
 class Main:

@@ -28,28 +28,11 @@ class AccumulateIntensity:
 
             # 各領域の平均値を計算
             averages = accumulator.calc_averages(img)
-
-            # 可視化
-            '''
-            print("")
-            print("image: {}".format(img_path.resolve()))
-            print("-" * 30)
-            print("beam name" + " " * 4 + "average")
-            print("-" * 30)
-            '''
             listave = []
             for ave in averages:
-                #print("{:<13}{}".format(ave[0], ave[1]))
                     listave.append(ave[1])
-                    print(ave[1])
-            #print("-" * 30)
 
             #テキストファイルに保存
-            print(listave)
-
-            outputdir = output + '/{}.txt'.format(root)
-            print(outputdir)
-            print(type(outputdir))
             numpyave = np.array(listave)
-            np.savetxt(outputdir,numpyave)
+            np.savetxt(output,numpyave)
 
