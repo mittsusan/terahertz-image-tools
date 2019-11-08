@@ -1,19 +1,16 @@
 import tkinter as tk
+from tkinter import messagebox
 import threading
-from PIL import Image,ImageTk
 import cv2
-import numpy as np
-import sys
-import matplotlib.pyplot as plt
 import tkinter.filedialog as tkfd
 import time
-
 from pathlib import Path
 from module.create_reference import CreateReference
 from module.show_infrared_camera import ShowInfraredCamera
 from module.accumulate_intensity import AccumulateIntensity
 from module.dnn import DNNClasifier
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+#from concurrent.futures import ThreadPoolExecutor
 
 class GUI:
     def __init__(self):
@@ -41,34 +38,6 @@ class GUI:
         self.dnn_frame()
 
 
-
-    def showbeam_ingui(self,trigger,gain,exp):
-
-        while True:
-            # 処理前の時刻
-            t1 = time.time()
-
-            self.cvv.cameraFrame(trigger,gain,exp)
-            if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), self.cvv.frame)
-                self.savecount += -1
-                print('saveimage:{}'.format(self.savecount))
-            self.loop_img = Image.fromarray(self.cvv.frame)
-            self.canvas_img = ImageTk.PhotoImage(self.loop_img)
-            self.canvas.create_image(self.CANVAS_X / 2, self.CANVAS_Y / 2, image=self.canvas_img)
-            #self._job = self.root.after(10, self.afterMSec(trigger,gain,exp))
-            if self.cancelflag:
-                print('Complete Cancel')
-                self.cancelflag = False
-                break
-
-            # 処理後の時刻
-            t2 = time.time()
-
-            # 経過時間を表示
-            freq = 1/(t2 - t1)
-            print(f"フレームレート：{freq}fps")
-
     def showbeam_imshow(self,trigger,gain,exp):
         while True:
             # 処理前の時刻
@@ -82,24 +51,14 @@ class GUI:
             if self.cvv.frame is None:
                 continue
 
-            cv2.imshow("Showing image(閉じる際はqボタンを押してください)", cv2.resize(self.cvv.frame, (1024, 1024)))
+            cv2.imshow("Please push Q button when you want to close the window.", cv2.resize(self.cvv.frame, (1024, 1024)))
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
                 print('Complete Cancel')
-
-                self.button2.config(state="disabled")
                 self.button3.config(state="active")
                 self.save.config(state="disabled")
                 break
-            '''
-            if self.cancelflag:
-                cv2.destroyAllWindows()
-                self.cancelflag = False
-                print('Complete Cancel')
-
-                break
-            '''
 
             # 処理後の時刻
             t2 = time.time()
@@ -165,15 +124,8 @@ class GUI:
             th = threading.Thread(target=self.showbeam_imshow, args=(trigger_type,gainEntry_value,expEntry_value))
             th.start()
             self.button1.config(state="disabled")
-            self.button2.config(state="active")
             self.save.config(state="active")
 
-
-        def button2_clicked():
-            self.cancel()
-            self.button2.config(state="disabled")
-            self.button3.config(state="active")
-            self.save.config(state="disabled")
 
         def button3_clicked():
             self.cvv.cam_manager.stop_acquisition()
@@ -185,16 +137,13 @@ class GUI:
             saveEntry.insert(tk.END, self.savepath)
 
         def save_clicked():
-            numEntry_value = gainEntry.get()
+            numEntry_value = numEntry.get()
             self.savecount = int(numEntry_value)
 
 
 
         self.button1 = tk.Button(text='OK',command=button1_clicked)
         self.button1.place(x=50, y=110)
-
-        self.button2 = tk.Button(text='Cancel', command=button2_clicked,state='disabled')
-        self.button2.place(x=90, y=110)
 
         self.button3 = tk.Button(text='STOP', command=button3_clicked,state='disabled')
         self.button3.place(x=150, y=110)
@@ -392,28 +341,55 @@ class GUI:
             valpath = tkfd.askdirectory(title='検証(val)フォルダを選択してください')
             valEntry.insert(tk.END, valpath)
 
+        def status_clicked():
+            active = threading.enumerate()
+            if len(active) == 1:
+                self.trainbutton.config(text='訓練', state='active')
+                messagebox.showinfo('status', '更新しました')
+            else:
+                messagebox.showinfo('status','訓練中です。')
+
         def dnn_train_clicked():
+            if len(trainEntry.get()) + len(valEntry.get()) == 0:
+                messagebox.showerror('エラー','訓練or検証フォルダが選択されていません。')
+            else:
+                self.trainbutton.config(text="訓練中",state="disable")
+                classcount = int(classEntry.get())
+                imtype = rdo_txt[rdo_var.get()]
+
+                '''
+                traindirlist = []
+                valdirlist = []
+                for index in range(classcount):
+                    exec("traindirlist.append(classtraindir%d)"%(index))
+                    exec("valdirlist.append(classvaldir%d)" % (index))
+                print(traindirlist)
+                DNNClasifier(traindirlist,valdirlist,classcount)
+                '''
+                dnn_classifier = DNNClasifier(imtype,trainEntry.get(),valEntry.get(),classcount)
+                th = threading.Thread(target=dnn_classifier.train)#dnn_classifier.train()のように書くとフリーズします！
+                th.start()
+
+        def dnn_test_clicked():
             classcount = int(classEntry.get())
             imtype = rdo_txt[rdo_var.get()]
-            '''
-            traindirlist = []
-            valdirlist = []
-            for index in range(classcount):
-                exec("traindirlist.append(classtraindir%d)"%(index))
-                exec("valdirlist.append(classvaldir%d)" % (index))
-            print(traindirlist)
-            DNNClasifier(traindirlist,valdirlist,classcount)
-            '''
-            dnn_classifier = DNNClasifier(imtype,trainEntry.get(),valEntry.get(),classcount)
-            th = threading.Thread(target=dnn_classifier.train(), )
+            dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
+            th = threading.Thread(target=dnn_classifier.test)
             th.start()
-            return
+
+
 
         #self.class_num = tk.Button(text='OK', command=class_clicked)
         #self.class_num.place(x=labelx + txtmovex+80, y=labely-5)
 
-        self.trainbutton = tk.Button(text='訓練', command=dnn_train_clicked)
+        self.trainbutton = tk.Button(text='Train', command=dnn_train_clicked)
         self.trainbutton.place(x=labelx+1000, y=labely)
+
+        self.testbutton = tk.Button(text='Realtime-Predict', command=dnn_test_clicked)
+        self.testbutton.place(x=labelx, y=labely+50)
+
+        self.statusbutton = tk.Button(text='Update status', command=status_clicked)
+        self.statusbutton.place(x=labelx + 1100, y=labely)
 
         self.trainfolderbutton= tk.Button(text='Select', command=trainfolderbutton_clicked)
         self.trainfolderbutton.place(x=labelx + 500, y=450)

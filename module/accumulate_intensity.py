@@ -30,9 +30,12 @@ class AccumulateIntensity:
             averages = accumulator.calc_averages(img)
             listave = []
             for ave in averages:
-                    listave.append(ave[1])
-
+                listave.append(ave[1])
+            txtname = root + '.txt'
+            output_path = os.path.join(output,txtname)
             #テキストファイルに保存
             numpyave = np.array(listave)
-            np.savetxt(output,numpyave)
+            print(output_path)
+            print(numpyave)
+            np.savetxt(output_path,numpyave)
 

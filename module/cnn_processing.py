@@ -5,6 +5,7 @@ import keras
 from keras.models import Sequential, model_from_json
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.core import Dense, Dropout, Activation, Flatten
+import matplotlib.pyplot as plt
 
 class CNN:
     def __init__(self,classnum,traindir,image_color,im_size_width,im_size_height,flip):
@@ -90,5 +91,42 @@ class CNN:
             print('save weights')
             model.save_weights(os.path.join(self.f_model, 'cnn_weights.hdf5'))
         KTF.set_session(old_session)
+        plt.plot(history.history['acc'])
+        plt.plot(history.history['val_acc'])
+        plt.title('model accuracy')
+        plt.xlabel('epoch')
+        plt.ylabel('accuracy')
+        plt.legend(['acc', 'val_acc'], loc='lower right')
+        plt.show()
+
+        plt.plot(history.history['loss'])
+        plt.plot(history.history['val_loss'])
+        plt.title('model loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.legend(['loss', 'val_loss'], loc='lower right')
+        plt.show()
         return
-        ##npyファイルのsave場所を変える際はココを変更
+
+    def cnn_test(self,video_file_name):
+        # ニュートラルネットワークで使用するモデル作成
+        model_filename = 'cnn_model.json'
+        weights_filename = 'cnn_weights.hdf5'
+        old_session = KTF.get_session()
+        with tf.Graph().as_default():
+            session = tf.Session('')
+            KTF.set_session(session)
+
+            json_string = open(os.path.join(self.f_model, model_filename)).read()
+            model = model_from_json(json_string)
+
+            model.summary()
+            adam = keras.optimizers.Adam(lr=self.learning_rate)
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+            model.load_weights(os.path.join(self.f_model, weights_filename))
+
+            cbks = []
+            video_predict(video_file_name)
+
+        KTF.set_session(old_session)

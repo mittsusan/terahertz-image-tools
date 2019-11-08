@@ -6,6 +6,7 @@ import glob
 import cv2
 from module.cnn_processing import CNN
 
+
 class DNNClasifier:
     def __init__(self,imtype,traindir,valdir,classnum):
         self.imtype = imtype
@@ -171,4 +172,7 @@ class DNNClasifier:
             # print(Y_train)
             # print(type(Y_test))
 
+    def test(self):
+        CNN(self.classnum, self.traindir, self.image_color, self.im_size_width, self.im_size_height,
+            self.flip).cnn_test(video_file_name)
         return
