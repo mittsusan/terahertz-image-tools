@@ -172,7 +172,7 @@ class DNNClasifier:
             # print(Y_train)
             # print(type(Y_test))
 
-    def test(self):
+    def test(self,trigger_type,gain,exp):
         CNN(self.classnum, self.traindir, self.image_color, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test(video_file_name)
+            self.flip).cnn_test(trigger_type,gain,exp)
         return

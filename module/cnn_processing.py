@@ -6,6 +6,7 @@ from keras.models import Sequential, model_from_json
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 import matplotlib.pyplot as plt
+from module.show_infrared_camera import ShowInfraredCamera
 
 class CNN:
     def __init__(self,classnum,traindir,image_color,im_size_width,im_size_height,flip):
@@ -108,25 +109,21 @@ class CNN:
         plt.show()
         return
 
-    def cnn_test(self,video_file_name):
+    def cnn_test(self,trigger_type,gain,exp):
         # ニュートラルネットワークで使用するモデル作成
         model_filename = 'cnn_model.json'
         weights_filename = 'cnn_weights.hdf5'
         old_session = KTF.get_session()
+        show_infrared_camera = ShowInfraredCamera()
         with tf.Graph().as_default():
             session = tf.Session('')
             KTF.set_session(session)
-
             json_string = open(os.path.join(self.f_model, model_filename)).read()
             model = model_from_json(json_string)
-
             model.summary()
             adam = keras.optimizers.Adam(lr=self.learning_rate)
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
             model.load_weights(os.path.join(self.f_model, weights_filename))
-
+            show_infrared_camera.show_beam(trigger_type,gain,exp)
             cbks = []
-            video_predict(video_file_name)
-
         KTF.set_session(old_session)

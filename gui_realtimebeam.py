@@ -1,9 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import threading
-import cv2
 import tkinter.filedialog as tkfd
-import time
 from pathlib import Path
 from module.create_reference import CreateReference
 from module.show_infrared_camera import ShowInfraredCamera
@@ -14,64 +12,22 @@ from module.dnn import DNNClasifier
 
 class GUI:
     def __init__(self):
-        #self.cvv=ShowInfraredCamera()
+        self.cvv=ShowInfraredCamera()
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
-        self._job = None
-        self.cancelflag = False
-        self.savecount = 0
         self.ROOT_X = 1300
         self.ROOT_Y = 850
         self.CANVAS_X=640
         self.CANVAS_Y=480
-        self.root.title(u"Real-time Beam Identification made by Mitsuhashi")
+        self.root.title(u"Real-time Beam Identification 2019 made by Mitsuhashi")
         self.root.geometry(str(self.ROOT_X) + "x" + str(self.ROOT_Y))
         self.root.resizable(width=0, height=0)
-        self.savepath = ''
-        self.inputpath = ''
-        self.outputpath = ''
-        self.accum_inputpath = ''
-        self.firstFrame()#トリガー、ゲイン、露出、保存を決めるフレーム
-        #self.secondFrame()#リアルタイムの画像を表示させるフレーム
+        self.firstFrame() #トリガー、ゲイン、露出、保存を決めるフレーム
         self.ellipseFrame()
         self.dnn_frame()
 
-
-    def showbeam_imshow(self,trigger,gain,exp):
-        while True:
-            # 処理前の時刻
-            t1 = time.time()
-            self.cvv.cameraFrame(trigger,gain,exp)
-            if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), self.cvv.frame)
-                self.savecount += -1
-                print('saveimage:{}'.format(self.savecount))
-
-            if self.cvv.frame is None:
-                continue
-
-            cv2.imshow("Please push Q button when you want to close the window.", cv2.resize(self.cvv.frame, (1024, 1024)))
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                cv2.destroyAllWindows()
-                print('Complete Cancel')
-                self.button3.config(state="active")
-                self.save.config(state="disabled")
-                break
-
-            # 処理後の時刻
-            t2 = time.time()
-
-            # 経過時間を表示
-            freq = 1 / (t2 - t1)
-            print(f"フレームレート：{freq}fps")
-
-    def cancel(self):
-        self.cancelflag = True
-
     def firstFrame(self):
-
         # ラベル
         lbl = tk.Label(text='トリガータイプを選択してください。')
         lbl.place(x=30, y=30)
@@ -85,23 +41,24 @@ class GUI:
         lbl.place(x=400, y=60)
 
         # ラジオボタンのラベルをリスト化する
-        rdo_txt = ['software', 'hardware']
+        self.trigger_rdo_txt = ['software', 'hardware']
         # ラジオボタンの状態
-        rdo_var = tk.IntVar()
+        self.trigger_rdo_var = tk.IntVar()
         # ラジオボタンを動的に作成して配置
-        for i in range(len(rdo_txt)):
-            rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
-            rdo.place(x=200, y=15 + (i * 24))
+        for i in range(len(self.trigger_rdo_txt)):
+            self.trigger_rdo = tk.Radiobutton(self.root, value=i, variable=self.trigger_rdo_var,
+                                              text=self.trigger_rdo_txt[i])
+            self.trigger_rdo.place(x=200, y=15 + (i * 24))
 
         # ゲインのテキストボックスを出現させる
-        gainEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
-        gainEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
-        gainEntry.place(x=200, y=70)
+        self.gainEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
+        self.gainEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
+        self.gainEntry.place(x=200, y=70)
 
         # 露出のテキストボックスを出現させる
-        expEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
-        expEntry.insert(tk.END, u'20000')  # 最初から文字を入れておく
-        expEntry.place(x=200, y=90)
+        self.expEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
+        self.expEntry.insert(tk.END, u'20000')  # 最初から文字を入れておく
+        self.expEntry.place(x=200, y=90)
 
         # 保存先のテキストボックスを出現させる
         saveEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
@@ -114,53 +71,33 @@ class GUI:
 
         def button1_clicked():
             # 値を取得
-            trigger_type = rdo_txt[rdo_var.get()]
-
-            gainEntry_value = gainEntry.get()
-            gainEntry_value = int(gainEntry_value)
-            expEntry_value = expEntry.get()
-            expEntry_value = int(expEntry_value)
-            self.cvv.configure(trigger_type,gainEntry_value,expEntry_value)
-            th = threading.Thread(target=self.showbeam_imshow, args=(trigger_type,gainEntry_value,expEntry_value))
+            trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+            gainEntry_value = int(self.gainEntry.get())
+            expEntry_value = int(self.expEntry.get())
+            th = threading.Thread(target=self.cvv.show_beam, args=(trigger_type,gainEntry_value,expEntry_value))
             th.start()
-            self.button1.config(state="disabled")
-            self.save.config(state="active")
-
-
-        def button3_clicked():
-            self.cvv.cam_manager.stop_acquisition()
-            self.button3.config(state="disabled")
-            self.button1.config(state="active")
 
         def selectdir_clicked():
-            self.savepath = tkfd.askdirectory()
-            saveEntry.insert(tk.END, self.savepath)
+            savepath = tkfd.askdirectory()
+            saveEntry.insert(tk.END, savepath)
 
         def save_clicked():
-            numEntry_value = numEntry.get()
-            self.savecount = int(numEntry_value)
+            savecount = int(numEntry.get())
 
-
+            if len(saveEntry.get()) == 0:
+                messagebox.showerror('patherror', '保存先フォルダが選択されていません。')
+            else:
+                self.cvv.save(savecount,saveEntry.get())
+                messagebox.showinfo('Update setting to save','保存先及び保存数が設定されました。カメラを起動してください。')
 
         self.button1 = tk.Button(text='OK',command=button1_clicked)
         self.button1.place(x=50, y=110)
 
-        self.button3 = tk.Button(text='STOP', command=button3_clicked,state='disabled')
-        self.button3.place(x=150, y=110)
-
         self.selectdir = tk.Button(text='Select', command=selectdir_clicked)
         self.selectdir.place(x=800, y=25)
 
-        self.save = tk.Button(text='Save', command=save_clicked,state='disabled')
+        self.save = tk.Button(text='Save', command=save_clicked)
         self.save.place(x=480, y=80)
-
-
-
-    def secondFrame(self):
-        #動画生成の為のキャンバスを作る
-        self.canvas = tk.Canvas(self.root, width=self.CANVAS_X, height=self.CANVAS_Y)
-        self.canvas.create_rectangle(0, 0, self.CANVAS_X, self.CANVAS_Y, fill="#696969")
-        self.canvas.place(x=300, y=200)
 
     def ellipseFrame(self):
         # ラベル
@@ -371,13 +308,14 @@ class GUI:
                 th.start()
 
         def dnn_test_clicked():
+            trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+            gainEntry_value = int(self.gainEntry.get())
+            expEntry_value = int(self.expEntry.get())
             classcount = int(classEntry.get())
             imtype = rdo_txt[rdo_var.get()]
             dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
-            th = threading.Thread(target=dnn_classifier.test)
+            th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value))
             th.start()
-
-
 
         #self.class_num = tk.Button(text='OK', command=class_clicked)
         #self.class_num.place(x=labelx + txtmovex+80, y=labely-5)

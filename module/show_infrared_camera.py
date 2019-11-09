@@ -3,12 +3,14 @@ from module.camera_manager import TriggerType
 from module.camera_manager import AcquisitionMode
 from module.camera_manager import AutoExposureMode
 from module.camera_manager import AutoGainMode
+import cv2
+import time
 
-class ShowInfraredCamera:
+class ShowInfraredCamera():
     def __init__(self):
         self.cam_manager = CameraManager()
-    def configure(self,trigger,gain,exp):
-
+        self.savecount = 0
+    def show_beam(self,trigger,gain,exp):
 
         if trigger == "software":
             self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
@@ -27,11 +29,49 @@ class ShowInfraredCamera:
 
         self.cam_manager.start_acquisition()
 
-    def cameraFrame(self,trigger,gain,exp):
+        while True:
+            # 処理前の時刻
+            t1 = time.time()
+            if trigger == "software":
+                self.cam_manager.execute_software_trigger()
 
-        if trigger == "software":
-            self.cam_manager.execute_software_trigger()
+            img = self.cam_manager.get_next_image()
+            if img is None:
+                continue
 
-        self.frame = self.cam_manager.get_next_image()
-        #self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+            cv2.imshow("Please push Q button when you want to close the window.",
+                       cv2.resize(img, (1024, 1024)))
+
+
+            if self.savecount != 0:
+                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), self.cvv.frame)
+                self.savecount += -1
+                print('saveimage:{}'.format(self.savecount))
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cv2.destroyAllWindows()
+                print('Complete Cancel')
+                break
+
+            # 処理後の時刻
+            t2 = time.time()
+
+            # 経過時間を表示
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
+
+        self.cam_manager.stop_acquisition()
+
+    def save(self,savecount, savepath):
+        self.savecount = savecount
+        self.savepath = savepath
+
+
+
+
+
+
+
+
+
 
