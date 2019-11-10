@@ -109,7 +109,7 @@ class CNN:
         plt.show()
         return
 
-    def cnn_test(self,trigger_type,gain,exp):
+    def cnn_test(self,trigger_type,gain,exp,classnamelist):
         # ニュートラルネットワークで使用するモデル作成
         model_filename = 'cnn_model.json'
         weights_filename = 'cnn_weights.hdf5'
@@ -124,6 +124,6 @@ class CNN:
             adam = keras.optimizers.Adam(lr=self.learning_rate)
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             model.load_weights(os.path.join(self.f_model, weights_filename))
-            show_infrared_camera.show_beam(trigger_type,gain,exp)
+            show_infrared_camera.realtime_identification(classnamelist,model,trigger_type,gain,exp,self.image_color,self.im_size_width,self.im_size_height,self.flip)
             cbks = []
         KTF.set_session(old_session)

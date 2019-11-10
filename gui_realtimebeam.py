@@ -12,7 +12,6 @@ from module.dnn import DNNClasifier
 
 class GUI:
     def __init__(self):
-        self.cvv=ShowInfraredCamera()
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
@@ -29,12 +28,14 @@ class GUI:
 
     def firstFrame(self):
         # ラベル
+        labelx = 30
+
         lbl = tk.Label(text='トリガータイプを選択してください。')
-        lbl.place(x=30, y=30)
+        lbl.place(x=labelx, y=30)
         lbl = tk.Label(text='ゲイン[db]を選択してください。')
-        lbl.place(x=30, y=70)
+        lbl.place(x=labelx, y=70)
         lbl = tk.Label(text='露出[um]を選択してください。')
-        lbl.place(x=30, y=90)
+        lbl.place(x=labelx, y=90)
         lbl = tk.Label(text='保存先を選択してください。')
         lbl.place(x=400, y=30)
         lbl = tk.Label(text='保存数を選択してください。')
@@ -70,7 +71,7 @@ class GUI:
         numEntry.place(x=550, y=60)
 
         def button1_clicked():
-            # 値を取得
+            self.cvv = ShowInfraredCamera()
             trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
             gainEntry_value = int(self.gainEntry.get())
             expEntry_value = int(self.expEntry.get())
@@ -83,12 +84,16 @@ class GUI:
 
         def save_clicked():
             savecount = int(numEntry.get())
+            try:
+                if len(saveEntry.get()) == 0:
+                    messagebox.showerror('patherror', '保存先フォルダが選択されていません。')
 
-            if len(saveEntry.get()) == 0:
-                messagebox.showerror('patherror', '保存先フォルダが選択されていません。')
-            else:
-                self.cvv.save(savecount,saveEntry.get())
-                messagebox.showinfo('Update setting to save','保存先及び保存数が設定されました。カメラを起動してください。')
+                else:
+                    self.cvv.save(savecount,saveEntry.get())
+                    messagebox.showinfo('Updated setting to save','カメラ画像を保存しました。')
+
+            except NameError:
+                messagebox.showerror('starterror', 'カメラが起動していません。')
 
         self.button1 = tk.Button(text='OK',command=button1_clicked)
         self.button1.place(x=50, y=110)
@@ -193,12 +198,12 @@ class GUI:
     def dnn_frame(self):
         # ラベル
         labelx = 30
-        labely = 450
+        labely = 500
         txtmovex = 150
         lbl = tk.Label(text='クラス数を選択してください。')
         lbl.place(x=labelx, y=labely)
-        #lbl = tk.Label(text='クラス名')
-        #lbl.place(x=labelx+300, y=labely-20)
+        lbl = tk.Label(text='クラス名を半角カンマ区切りで入力してください。（入力順は0,1,,,9,,,,a,b,c,,,の順番に入力してください。）')
+        lbl.place(x=labelx, y=labely+50)
         lbl = tk.Label(text='訓練(train)フォルダ')
         lbl.place(x=labelx + 300, y=labely - 20)
         lbl = tk.Label(text='検証(validation)フォルダ')
@@ -211,10 +216,12 @@ class GUI:
         classEntry.place(x=labelx + txtmovex, y=labely)
         trainEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
         trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
-        trainEntry.place(x=300, y=450)
+        trainEntry.place(x=300, y=labely)
         valEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
         valEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/validation')
-        valEntry.place(x=600, y=450)
+        valEntry.place(x=600, y=labely)
+        classnameEntry = tk.Entry(width=50)
+        classnameEntry.place(x=labelx, y=labely + 70)
 
         # ラジオボタンのラベルをリスト化する
         rdo_txt = ['image','1', '2', '3', '4', '5', '6', '7', '8', '9 ', '10']
@@ -223,10 +230,10 @@ class GUI:
         # ラジオボタンを動的に作成して配置
         for i in range(6):
             rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
-            rdo.place(x=900, y=450+ (i * 24))
+            rdo.place(x=900, y=labely+ (i * 24))
         for i in range(6,len(rdo_txt)):
             rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
-            rdo.place(x=980, y=450+ ((i-6) * 24))
+            rdo.place(x=980, y=labely+ ((i-6) * 24))
 
         '''
         フォルダを分割して選択する場合
@@ -270,6 +277,7 @@ class GUI:
                 #classtrainbutton.place(x=labelx+600, y=440 + index*25)
             '''
 
+
         def trainfolderbutton_clicked():
             trainpath = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')
             trainEntry.insert(tk.END, trainpath)
@@ -308,32 +316,34 @@ class GUI:
                 th.start()
 
         def dnn_test_clicked():
-            trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
-            gainEntry_value = int(self.gainEntry.get())
-            expEntry_value = int(self.expEntry.get())
             classcount = int(classEntry.get())
-            imtype = rdo_txt[rdo_var.get()]
-            dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
-            th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value))
-            th.start()
+            classnamelist = sorted(classnameEntry.get().split(','))
+            if len(classnamelist) == classcount:
+                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                gainEntry_value = int(self.gainEntry.get())
+                expEntry_value = int(self.expEntry.get())
+                imtype = rdo_txt[rdo_var.get()]
+                dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
+                th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value,classnamelist))
+                th.start()
+            else:
+                messagebox.showerror('classnameerror','クラス名の数とクラス数が一致していません。')
 
-        #self.class_num = tk.Button(text='OK', command=class_clicked)
-        #self.class_num.place(x=labelx + txtmovex+80, y=labely-5)
 
         self.trainbutton = tk.Button(text='Train', command=dnn_train_clicked)
         self.trainbutton.place(x=labelx+1000, y=labely)
 
         self.testbutton = tk.Button(text='Realtime-Predict', command=dnn_test_clicked)
-        self.testbutton.place(x=labelx, y=labely+50)
+        self.testbutton.place(x=labelx+150, y=labely+100)
 
         self.statusbutton = tk.Button(text='Update status', command=status_clicked)
         self.statusbutton.place(x=labelx + 1100, y=labely)
 
         self.trainfolderbutton= tk.Button(text='Select', command=trainfolderbutton_clicked)
-        self.trainfolderbutton.place(x=labelx + 500, y=450)
+        self.trainfolderbutton.place(x=labelx + 520, y=labely)
 
         self.valfolderbutton = tk.Button(text='Select', command=valfolderbutton_clicked)
-        self.valfolderbutton.place(x=labelx + 800, y=450)
+        self.valfolderbutton.place(x=labelx + 820, y=labely)
 
 
 
