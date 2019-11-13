@@ -71,12 +71,16 @@ class GUI:
         numEntry.place(x=550, y=60)
 
         def button1_clicked():
-            self.cvv = ShowInfraredCamera()
-            trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
-            gainEntry_value = int(self.gainEntry.get())
-            expEntry_value = int(self.expEntry.get())
-            th = threading.Thread(target=self.cvv.show_beam, args=(trigger_type,gainEntry_value,expEntry_value))
-            th.start()
+            try:
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
+                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                gainEntry_value = int(self.gainEntry.get())
+                expEntry_value = int(self.expEntry.get())
+                th = threading.Thread(target=self.cvv.show_beam, args=(trigger_type,gainEntry_value,expEntry_value))
+                th.start()
+            except RuntimeError:
+                messagebox.showerror('connecterror','USBにカメラが接続されていません。')
 
         def selectdir_clicked():
             savepath = tkfd.askdirectory()
@@ -90,9 +94,9 @@ class GUI:
 
                 else:
                     self.cvv.save(savecount,saveEntry.get())
-                    messagebox.showinfo('Updated setting to save','カメラ画像を保存しました。')
+                    messagebox.showinfo('Updated setting to save','カメラ画像を保存しました。（カメラが起動していない場合は保存予約になります。）')
 
-            except NameError:
+            except AttributeError:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
         self.button1 = tk.Button(text='OK',command=button1_clicked)
@@ -221,6 +225,7 @@ class GUI:
         valEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/validation')
         valEntry.place(x=600, y=labely)
         classnameEntry = tk.Entry(width=50)
+        classnameEntry.insert(tk.END,u'None,Si0.05,Si0.10,Si0.20')
         classnameEntry.place(x=labelx, y=labely + 70)
 
         # ラジオボタンのラベルをリスト化する
@@ -316,20 +321,25 @@ class GUI:
                 th.start()
 
         def dnn_test_clicked():
-            classcount = int(classEntry.get())
-            classnamelist = sorted(classnameEntry.get().split(','))
-            if len(classnamelist) == classcount:
-                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
-                gainEntry_value = int(self.gainEntry.get())
-                expEntry_value = int(self.expEntry.get())
-                imtype = rdo_txt[rdo_var.get()]
-                dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
-                th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value,classnamelist))
-                th.start()
-            else:
-                messagebox.showerror('classnameerror','クラス名の数とクラス数が一致していません。')
+            try:
+                self.cvv = ShowInfraredCamera()
+                self.cvv = None
+                classcount = int(classEntry.get())
+                classnamelist = sorted(classnameEntry.get().split(','))
+                print('sorted:classname{}'.format(classnamelist))
+                if len(classnamelist) == classcount:
+                    trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                    gainEntry_value = int(self.gainEntry.get())
+                    expEntry_value = int(self.expEntry.get())
+                    imtype = rdo_txt[rdo_var.get()]
+                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
+                    th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value,classnamelist))
+                    th.start()
+                else:
+                    messagebox.showerror('classnameerror','クラス名の数とクラス数が一致していません。')
 
-
+            except RuntimeError:
+                messagebox.showerror('connecterror','USBにカメラが接続されていません。')
         self.trainbutton = tk.Button(text='Train', command=dnn_train_clicked)
         self.trainbutton.place(x=labelx+1000, y=labely)
 

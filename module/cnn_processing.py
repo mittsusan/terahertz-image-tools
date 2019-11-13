@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from module.show_infrared_camera import ShowInfraredCamera
 
 class CNN:
-    def __init__(self,classnum,traindir,image_color,im_size_width,im_size_height,flip):
+    def __init__(self,classnum,traindir,im_size_width,im_size_height,flip):
         self.conv1 = 30
         self.conv2 = 20
         self.conv3 = 10
@@ -20,17 +20,16 @@ class CNN:
         self.learning_rate = 1e-3
         self.classnum = classnum
         self.traindir = traindir
-        self.image_color = image_color
         self.im_size_width = im_size_width
         self.im_size_height = im_size_height
         self.flip = flip
         self.model_structure = 'convreluMax' + str(self.conv1) + '_convreluMax' + str(self.conv2) + '_convreluMax' + str(
             self.conv3) + '_dense' + str(self.dense1) + 'relu_softmax'
-        self.f_log = self.traindir + self.image_color + 'width' + str(
+        self.f_log = self.traindir + 'width' + str(
             self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(
             self.flip) + '/' + self.model_structure + '_lr' + str(self.learning_rate) + '/Adam_epoch' + str(
             self.nb_epoch) + '_batch' + str(self.nb_batch)
-        self.f_model = self.traindir + image_color + 'width' + str(
+        self.f_model = self.traindir  + 'width' + str(
             im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(
             self.flip) + '/' + self.model_structure + '_lr' + str(self.learning_rate) + '/Adam_epoch' + str(
             self.nb_epoch) + '_batch' + str(self.nb_batch)
@@ -92,21 +91,6 @@ class CNN:
             print('save weights')
             model.save_weights(os.path.join(self.f_model, 'cnn_weights.hdf5'))
         KTF.set_session(old_session)
-        plt.plot(history.history['acc'])
-        plt.plot(history.history['val_acc'])
-        plt.title('model accuracy')
-        plt.xlabel('epoch')
-        plt.ylabel('accuracy')
-        plt.legend(['acc', 'val_acc'], loc='lower right')
-        plt.show()
-
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_loss'])
-        plt.title('model loss')
-        plt.xlabel('epoch')
-        plt.ylabel('loss')
-        plt.legend(['loss', 'val_loss'], loc='lower right')
-        plt.show()
         return
 
     def cnn_test(self,trigger_type,gain,exp,classnamelist):
@@ -114,6 +98,7 @@ class CNN:
         model_filename = 'cnn_model.json'
         weights_filename = 'cnn_weights.hdf5'
         old_session = KTF.get_session()
+        show_infrared_camera = None
         show_infrared_camera = ShowInfraredCamera()
         with tf.Graph().as_default():
             session = tf.Session('')
@@ -124,6 +109,6 @@ class CNN:
             adam = keras.optimizers.Adam(lr=self.learning_rate)
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             model.load_weights(os.path.join(self.f_model, weights_filename))
-            show_infrared_camera.realtime_identification(classnamelist,model,trigger_type,gain,exp,self.image_color,self.im_size_width,self.im_size_height,self.flip)
+            show_infrared_camera.realtime_identification(classnamelist,model,trigger_type,gain,exp,self.im_size_width,self.im_size_height,self.flip)
             cbks = []
         KTF.set_session(old_session)

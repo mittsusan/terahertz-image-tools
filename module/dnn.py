@@ -14,7 +14,6 @@ class DNNClasifier:
         self.valdir = valdir
         self.classnum = classnum
         if self.imtype == 'image':
-            self.image_color = 'RGB'
             self.im_size_width = 30
             self.im_size_height = 44
             self.flip = 1  # 1の場合画像を左右反転,0の場合、上下反転、-1の場合上下左右反転、Noneでなし。
@@ -36,12 +35,7 @@ class DNNClasifier:
                         basename, ext = os.path.splitext(i)
                         if ext == '.jpg' or ext == '.png' or ext == '.jpeg':
                             print('処理予定{}'.format(i))
-                            image = cv2.imread(i)
-                            # bgrからrgbへの変換(openCVでは一般的にBGR)
-                            if self.image_color == 'RGB':
-                                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                            elif self.image_color == 'GRAY':
-                                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                            image = cv2.imread(i,cv2.IMREAD_GRAYSCALE)
                             image = cv2.resize(image, (self.im_size_width, self.im_size_height))  # サイズ変更して圧縮
                             if self.flip == None:
                                 pass
@@ -91,9 +85,10 @@ class DNNClasifier:
             return (x_all, y_all)
 
         if self.imtype == 'image':
-            npy_train_data_dir = self.traindir  + self.image_color + 'width' + str(
+
+            npy_train_data_dir = self.traindir  + 'width' + str(
                 self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(self.flip)
-            npy_val_data_dir = self.valdir  + self.image_color + 'width' + str(
+            npy_val_data_dir = self.valdir  + 'width' + str(
                 self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(self.flip)
         else:
             npy_train_data_dir = self.traindir  + self.imtype
@@ -122,12 +117,6 @@ class DNNClasifier:
             Y_train = np_utils.to_categorical(np.array(y_all_1), self.classnum)
             Y_test = np_utils.to_categorical(np.array(y_all_2), self.classnum)
 
-            # print(X_train)
-            print(len(X_train))
-            # print(Y_train)
-            print(len(Y_train))
-            print(len(X_test))
-            print(len(Y_test))
 
         ##npyデータファイル読み込みor保存
         if os.path.exists(train_data_Xnpy):
@@ -156,15 +145,13 @@ class DNNClasifier:
 
         print(X_train.shape)
         print(X_test.shape)
+
         if self.imtype == 'image':
-            if self.image_color == 'GRAY':
-                X_train.resize(X_train.shape[0], X_train.shape[1], X_train.shape[2], 1)
-                X_test.resize(X_test.shape[0], X_test.shape[1], X_test.shape[2], 1)
 
-            elif self.image_color == 'RGB':
-                pass
-
-            CNN(self.classnum,self.traindir,self.image_color,self.im_size_width,self.im_size_height,self.flip).cnn_train(X_train,Y_train,X_test,Y_test)
+            X_train.resize(X_train.shape[0], X_train.shape[1], X_train.shape[2], 1)
+            X_test.resize(X_test.shape[0], X_test.shape[1], X_test.shape[2], 1)
+            CNN(self.classnum, self.traindir, self.im_size_width, self.im_size_height,
+                self.flip).cnn_train(X_train, Y_train, X_test, Y_test)
 
         else:
             print(X_train.shape[1:])
@@ -173,6 +160,7 @@ class DNNClasifier:
             # print(type(Y_test))
 
     def test(self,trigger_type,gain,exp,classnamelist):
-        CNN(self.classnum, self.traindir, self.image_color, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test(trigger_type,gain,exp,classnamelist)
+
+        CNN(self.classnum, self.traindir, self.im_size_width, self.im_size_height,
+            self.flip).cnn_test(trigger_type, gain, exp, classnamelist)
         return

@@ -64,7 +64,7 @@ class ShowInfraredCamera():
 
         self.cam_manager.stop_acquisition()
 
-    def realtime_identification(self,classnamelist,model,trigger,gain,exp,image_color,im_size_width,im_size_height,flip):
+    def realtime_identification(self,classnamelist,model,trigger,gain,exp,im_size_width,im_size_height,flip):
 
         if trigger == "software":
             self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
@@ -84,7 +84,13 @@ class ShowInfraredCamera():
         self.cam_manager.start_acquisition()
 
         font = cv2.FONT_HERSHEY_PLAIN
-        fontsize = 1.3
+        fontsize = 8
+        samplename_position_x = 360
+        samplename_position_y = 120
+        probability_position_x = 360
+        probability_position_y = 220
+        x_move = 1100
+        font_scale = 6
         while True:
             # 処理前の時刻
             t1 = time.time()
@@ -105,12 +111,7 @@ class ShowInfraredCamera():
             elif flip == -1:
                 frame = cv2.flip(frame, -1)  # 画像を上下左右反転
 
-            if image_color == 'RGB':
-                convert_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            elif image_color == 'GRAY':
-                convert_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            resize_image = cv2.resize(convert_frame, (im_size_width, im_size_height))
+            resize_image = cv2.resize(frame, (im_size_width, im_size_height))
             # print(resize_image)
             # print('writing')
             X = []
@@ -118,32 +119,28 @@ class ShowInfraredCamera():
             X = np.array(X)
             X = X.astype("float") / 256
 
-            if image_color == 'GRAY':
-                X.resize(X.shape[0], X.shape[1], X.shape[2], 1)
-
-            elif image_color == 'RGB':
-                pass
+            X.resize(X.shape[0], X.shape[1], X.shape[2], 1)
 
             predict = model.predict(X)
 
             for (i, pre) in enumerate(predict):
                 y = pre.argmax()  # preがそれぞれの予測確率で一番高いものを取ってきている。Y_testはone-hotベクトル
-                cv2.putText(frame, 'Probability', (180, 38), font, fontsize, (0, 0, 0), 2, cv2.LINE_AA)
-                samplename_position = (260, 20)
-                probability_position = (300, 38)
 
-                cv2.putText(frame, 'Predict sample', (90, 20), font, fontsize, (0, 0, 0), 2, cv2.LINE_AA)
+
+                cv2.putText(frame, 'Predict sample', (samplename_position_x, samplename_position_y), font, fontsize, (255, 255, 255), font_scale, cv2.LINE_AA)
+                cv2.putText(frame, 'Probability', (probability_position_x, probability_position_y), font, fontsize,
+                            (255, 255, 255), font_scale, cv2.LINE_AA)
                 pretext = classnamelist[y]
-                cv2.putText(frame, pretext, samplename_position, font, fontsize, (0, 0, 255), 2, cv2.LINE_AA)
+                cv2.putText(frame, pretext, (samplename_position_x+x_move,samplename_position_y), font, fontsize, (255, 255, 255), font_scale, cv2.LINE_AA)
 
                 print("予測: {0}  {1}% ".format(y, round(pre[y] * 100)))
 
                 if pre[y] > 0.9:  # 確率が90%を超える時
-                    cv2.putText(frame, '{}%'.format(round(pre[y] * 100)), probability_position, font, fontsize,
-                                (0, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(frame, '{}%'.format(round(pre[y] * 100)), (probability_position_x+x_move, probability_position_x), font, fontsize,
+                                (0, 0, 255), font_scale, cv2.LINE_AA)
                 else:
-                    cv2.putText(frame, '{}%'.format(round(pre[y] * 100)), probability_position, font, fontsize,
-                                (0, 0, 0), 2, cv2.LINE_AA)
+                    cv2.putText(frame, '{}%'.format(round(pre[y] * 100)), (probability_position_x+x_move, probability_position_y), font, fontsize,
+                                (255, 255, 255), font_scale, cv2.LINE_AA)
 
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(frame, (1024, 1024)))
@@ -167,7 +164,7 @@ class ShowInfraredCamera():
             print(f"フレームレート：{freq}fps")
 
         self.cam_manager.stop_acquisition()
-
+        print('Stopped Camera')
     def save(self,savecount, savepath):
         self.savecount = savecount
         self.savepath = savepath
