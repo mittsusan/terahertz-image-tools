@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.ttk as ttk
 from tkinter import messagebox
 import threading
 import tkinter.filedialog as tkfd
@@ -7,68 +8,72 @@ from module.create_reference import CreateReference
 from module.show_infrared_camera import ShowInfraredCamera
 from module.accumulate_intensity import AccumulateIntensity
 from module.dnn import DNNClasifier
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-#from concurrent.futures import ThreadPoolExecutor
+
 
 class GUI:
     def __init__(self):
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
-        self.ROOT_X = 1300
-        self.ROOT_Y = 850
-        self.CANVAS_X=640
-        self.CANVAS_Y=480
+        self.nb = ttk.Notebook(width=1000, height=400)
+        self.tab1 = tk.Frame(self.nb)
+        self.tab2 = tk.Frame(self.nb)
+        self.nb.add(self.tab1, text='カメラ')
+        self.nb.add(self.tab2, text='ビーム積算')
+        self.nb.pack(expand=1, fill='both')
+        #self.ROOT_X = 1000
+        #self.ROOT_Y = 700
         self.root.title(u"Real-time Beam Identification 2019 made by Mitsuhashi")
-        self.root.geometry(str(self.ROOT_X) + "x" + str(self.ROOT_Y))
+        #self.root.geometry(str(self.ROOT_X) + "x" + str(self.ROOT_Y))
         self.root.resizable(width=0, height=0)
-        self.firstFrame() #トリガー、ゲイン、露出、保存を決めるフレーム
+        self.cameraFrame() #トリガー、ゲイン、露出、保存を決めるフレーム
         self.ellipseFrame()
         self.dnn_frame()
 
-    def firstFrame(self):
-        # ラベル
-        labelx = 30
-
-        lbl = tk.Label(text='トリガータイプを選択してください。')
-        lbl.place(x=labelx, y=30)
-        lbl = tk.Label(text='ゲイン[db]を選択してください。')
-        lbl.place(x=labelx, y=70)
-        lbl = tk.Label(text='露出[um]を選択してください。')
-        lbl.place(x=labelx, y=90)
-        lbl = tk.Label(text='保存先を選択してください。')
-        lbl.place(x=400, y=30)
-        lbl = tk.Label(text='保存数を選択してください。')
-        lbl.place(x=400, y=60)
+    def cameraFrame(self):
+        configFrame = tk.LabelFrame(self.tab1,bd=2,relief="ridge",text="カメラの共通設定")
+        configFrame.pack(anchor=tk.W,pady=5)
+        saveFrame = tk.LabelFrame(self.tab1,bd=2,relief="ridge",text="映像保存")
+        saveFrame.pack(anchor=tk.W,pady=5)
+        lbl = tk.Label(configFrame,text='トリガータイプを選択してください。')
+        lbl.grid(row=0,column=0)
+        lbl = tk.Label(configFrame,text='ゲイン[db]を選択してください。')
+        lbl.grid(row=1, column=0)
+        lbl = tk.Label(configFrame,text='露出[um]を選択してください。')
+        lbl.grid(row=2,column=0)
+        lbl = tk.Label(saveFrame,text='保存先を選択してください。')
+        lbl.grid(row=0, column=0)
+        lbl = tk.Label(saveFrame,text='保存数を選択してください。')
+        lbl.grid(row=1, column=0)
 
         # ラジオボタンのラベルをリスト化する
         self.trigger_rdo_txt = ['software', 'hardware']
         # ラジオボタンの状態
         self.trigger_rdo_var = tk.IntVar()
         # ラジオボタンを動的に作成して配置
-        for i in range(len(self.trigger_rdo_txt)):
-            self.trigger_rdo = tk.Radiobutton(self.root, value=i, variable=self.trigger_rdo_var,
-                                              text=self.trigger_rdo_txt[i])
-            self.trigger_rdo.place(x=200, y=15 + (i * 24))
 
+        for i in range(len(self.trigger_rdo_txt)):
+            self.trigger_rdo = tk.Radiobutton(configFrame, value=i, variable=self.trigger_rdo_var,
+                                              text=self.trigger_rdo_txt[i])
+            self.trigger_rdo.grid(row=0,column=i+1,sticky=tk.W)
         # ゲインのテキストボックスを出現させる
-        self.gainEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
+        self.gainEntry = tk.Entry(configFrame,width=20)  # widthプロパティで大きさを変える
         self.gainEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
-        self.gainEntry.place(x=200, y=70)
+        self.gainEntry.grid(row=1, column=1)
 
         # 露出のテキストボックスを出現させる
-        self.expEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
+        self.expEntry = tk.Entry(configFrame,width=20)  # widthプロパティで大きさを変える
         self.expEntry.insert(tk.END, u'20000')  # 最初から文字を入れておく
-        self.expEntry.place(x=200, y=90)
+        self.expEntry.grid(row=2, column=1)
 
         # 保存先のテキストボックスを出現させる
-        saveEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
-        saveEntry.place(x=550, y=30)
+        saveEntry = tk.Entry(saveFrame,width=70)  # widthプロパティで大きさを変える
+        saveEntry.grid(row=0, column=1)
 
         # 保存数のテキストボックスを出現させる
-        numEntry = tk.Entry(width=20)  # widthプロパティで大きさを変える
+        numEntry = tk.Entry(saveFrame,width=20)  # widthプロパティで大きさを変える
         numEntry.insert(tk.END, u'10')  # 最初から文字を入れておく
-        numEntry.place(x=550, y=60)
+        numEntry.grid(row=1, column=1, sticky=tk.W)
 
         def button1_clicked():
             try:
@@ -99,58 +104,66 @@ class GUI:
             except AttributeError:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
-        self.button1 = tk.Button(text='OK',command=button1_clicked)
-        self.button1.place(x=50, y=110)
 
-        self.selectdir = tk.Button(text='Select', command=selectdir_clicked)
-        self.selectdir.place(x=800, y=25)
 
-        self.save = tk.Button(text='Save', command=save_clicked)
-        self.save.place(x=480, y=80)
+        self.selectdir = tk.Button(saveFrame,text='Select', command=selectdir_clicked)
+        self.selectdir.grid(row=0, column=2)
+        self.button1 = tk.Button(saveFrame, text='表示', command=button1_clicked)
+        self.button1.grid(row=2, column=2)
+        self.save = tk.Button(saveFrame,text='保存', command=save_clicked)
+        self.save.grid(row=2, column=3)
 
     def ellipseFrame(self):
-        # ラベル
-        labelx = 30
-        labely = 200
-        txtmovex = 470
-        lbl = tk.Label(text='楕円検出用リファレンス画像を保存したディレクトリを選択してください。')
-        lbl.place(x=labelx, y=labely)
-        lbl = tk.Label(text='楕円パラメータと楕円マスクを保存するディレクトリを選択してください。(楕円積算にも使用!!)')
-        lbl.place(x=labelx, y=labely+20)
-        lbl = tk.Label(text='ビームの本数を選択してください(楕円積算にも使用!!)')
-        lbl.place(x=labelx, y=labely+40)
-        lbl = tk.Label(text='楕円の短軸長の最小閾値を選択してください。')
-        lbl.place(x=labelx, y=labely+60)
-        lbl = tk.Label(text='楕円の短軸長の最大閾値を選択してください。')
-        lbl.place(x=labelx, y=labely+80)
-        lbl = tk.Label(text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。')
-        lbl.place(x=labelx, y=labely+100)
-        lbl = tk.Label(text='積算したい入力画像を格納したディレクトリを選択してください。')
-        lbl.place(x=labelx, y=labely + 150)
-        lbl = tk.Label(text='積算データを保存するディレクトリを選択してください。')
-        lbl.place(x=labelx, y=labely + 170)
+        configelipseFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="共通設定（下記の二つで使います。）")
+        configelipseFrame.pack(anchor=tk.W,pady=5)
+        ellipseparamFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="ビームの形を取得")
+        ellipseparamFrame.pack(anchor=tk.W,pady=5)
+        accumellipseFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="ビームの積算値を取得")
+        accumellipseFrame.pack(anchor=tk.W,pady=5)
+
+        lbl = tk.Label(configelipseFrame,text='ビームの本数を選択してください')
+        lbl.grid(row=0, column=0, sticky=tk.W)
+        lbl = tk.Label(configelipseFrame,text='ビームの形を保存するor利用するディレクトリを選択してください。')
+        lbl.grid(row=1, column=0, sticky=tk.W)
+
+        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長の最小閾値を選択してください。')
+        lbl.grid(row=0, column=0, sticky=tk.W)
+        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長の最大閾値を選択してください。')
+        lbl.grid(row=1, column=0, sticky=tk.W)
+        lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。')
+        lbl.grid(row=2, column=0, sticky=tk.W)
+        lbl = tk.Label(ellipseparamFrame,text='リファレンス画像を保存したディレクトリを選択してください。')
+        lbl.grid(row=3, column=0, sticky=tk.W)
+
+        lbl = tk.Label(accumellipseFrame,text='積算したいビーム画像を格納したディレクトリを選択してください。')
+        lbl.grid(row=0, column=0, sticky=tk.W)
+        lbl = tk.Label(accumellipseFrame,text='積算データを保存するディレクトリを選択してください。')
+        lbl.grid(row=1, column=0, sticky=tk.W)
 
         # テキストボックス
-        inputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
-        inputEntry.place(x=labelx+txtmovex, y=labely)
-        outputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
-        outputEntry.place(x=labelx+txtmovex, y=labely+20)
-        beamsEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        beamsEntry = tk.Entry(configelipseFrame, width=10)  # widthプロパティで大きさを変える
         beamsEntry.insert(tk.END, u'3')  # 最初から文字を入れておく
-        beamsEntry.place(x=labelx+txtmovex, y=labely +40)
-        minEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        beamsEntry.grid(row=0, column=1, sticky=tk.W)
+        outputEntry = tk.Entry(configelipseFrame, width=40)  # widthプロパティで大きさを変える
+        outputEntry.grid(row=1, column=1, sticky=tk.W)
+
+        minEntry = tk.Entry(ellipseparamFrame, width=10)  # widthプロパティで大きさを変える
         minEntry.insert(tk.END, u'100')  # 最初から文字を入れておく
-        minEntry.place(x=labelx+txtmovex, y=labely +60)
-        maxEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        minEntry.grid(row=0, column=1, sticky=tk.W)
+        maxEntry = tk.Entry(ellipseparamFrame, width=10)  # widthプロパティで大きさを変える
         maxEntry.insert(tk.END, u'10000')  # 最初から文字を入れておく
-        maxEntry.place(x=labelx+txtmovex, y=labely +80)
-        threshEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
+        maxEntry.grid(row=1, column=1, sticky=tk.W)
+        threshEntry = tk.Entry(ellipseparamFrame, width=10)  # widthプロパティで大きさを変える
         threshEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
-        threshEntry.place(x=labelx+txtmovex, y=labely +100)
-        accuminputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
-        accuminputEntry.place(x=labelx + txtmovex, y=labely + 150)
-        accumoutputEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
-        accumoutputEntry.place(x=labelx + txtmovex, y=labely + 170)
+        threshEntry.grid(row=2, column=1, sticky=tk.W)
+        inputEntry = tk.Entry(ellipseparamFrame,width=40)  # widthプロパティで大きさを変える
+        inputEntry.grid(row=3, column=1, sticky=tk.W)
+
+
+        accuminputEntry = tk.Entry(accumellipseFrame,width=40)  # widthプロパティで大きさを変える
+        accuminputEntry.grid(row=0,column=1, sticky=tk.W)
+        accumoutputEntry = tk.Entry(accumellipseFrame,width=40)  # widthプロパティで大きさを変える
+        accumoutputEntry.grid(row=1, column=1, sticky=tk.W)
 
         def inputdir_clicked():
             self.inputpath = tkfd.askdirectory()
@@ -186,101 +199,61 @@ class GUI:
             numbeams = int(beamsEntry.get())
             self.accumulate_intensity.main(ref,input,output,numbeams)
 
-        self.inputdir = tk.Button(text='Select', command=inputdir_clicked)
-        self.inputdir.place(x=labelx+txtmovex+250, y=labely-10)
-        self.outputdir = tk.Button(text='Select', command=outputdir_clicked)
-        self.outputdir.place(x=labelx+txtmovex+250, y=labely + 20)
-        self.getref_ellipse = tk.Button(text='Get Ellipse', command=getref_ellipse_clicked)
-        self.getref_ellipse.place(x=labelx+200, y=labely + 120)
-        self.accum_inputdir = tk.Button(text='Select', command=accum_inputdir_clicked)
-        self.accum_inputdir.place(x=labelx + txtmovex + 250, y=labely+140)
-        self.accum_outputdir = tk.Button(text='Select', command=accum_outputdir_clicked)
-        self.accum_outputdir.place(x=labelx + txtmovex + 250, y=labely + 170)
-        self.accum_ellipse = tk.Button(text='Accumulate intensity of ellipse', command=accum_ellipse_clicked)
-        self.accum_ellipse.place(x=labelx + 200, y=labely + 190)
+        self.outputdir = tk.Button(configelipseFrame,text='Select', command=outputdir_clicked)
+        self.outputdir.grid(row=1,column=2, sticky=tk.W)
+
+        self.inputdir = tk.Button(ellipseparamFrame,text='Select', command=inputdir_clicked)
+        self.inputdir.grid(row=3,column=2, sticky=tk.W)
+        self.getref_ellipse = tk.Button(ellipseparamFrame,text='Get Ellipse', command=getref_ellipse_clicked)
+        self.getref_ellipse.grid(row=4,column=2, sticky=tk.W,pady=5)
+
+        self.accum_inputdir = tk.Button(accumellipseFrame,text='Select', command=accum_inputdir_clicked)
+        self.accum_inputdir.grid(row=0,column=2, sticky=tk.W)
+        self.accum_outputdir = tk.Button(accumellipseFrame,text='Select', command=accum_outputdir_clicked)
+        self.accum_outputdir.grid(row=1,column=2, sticky=tk.W)
+        self.accum_ellipse = tk.Button(accumellipseFrame,text='Accumulate intensity of ellipse', command=accum_ellipse_clicked)
+        self.accum_ellipse.grid(row=2,column=2, sticky=tk.W,pady=5)
 
     def dnn_frame(self):
-        # ラベル
-        labelx = 30
-        labely = 500
-        txtmovex = 150
-        lbl = tk.Label(text='クラス数を選択してください。')
-        lbl.place(x=labelx, y=labely)
-        lbl = tk.Label(text='クラス名を半角カンマ区切りで入力してください。（入力順は0,1,,,9,,,,a,b,c,,,の順番に入力してください。）')
-        lbl.place(x=labelx, y=labely+50)
-        lbl = tk.Label(text='訓練(train)フォルダ')
-        lbl.place(x=labelx + 300, y=labely - 20)
-        lbl = tk.Label(text='検証(validation)フォルダ')
-        lbl.place(x=labelx + 600, y=labely - 20)
-        lbl = tk.Label(text='ビームの数or画像')
-        lbl.place(x=labelx + 870, y=labely - 20)
-        # テキストボックスw
-        classEntry = tk.Entry(width=10)  # widthプロパティで大きさを変える
-        classEntry.insert(tk.END, u'4')  # 最初から文字を入れておく
-        classEntry.place(x=labelx + txtmovex, y=labely)
-        trainEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        dnnFrame = tk.LabelFrame(self.tab1, width=600,height=200,bd=2, relief="ridge",
+                                          text="Deep Learning (Supervised Learning)")
+        dnnFrame.pack(anchor=tk.W,pady=5)
+
+        lbl = tk.Label(dnnFrame,text='ビームの数or画像')
+        lbl.grid(row=0, column=0,sticky=tk.W,pady=2)
+        lbl = tk.Label(dnnFrame,text='訓練(train)フォルダ')
+        lbl.grid(row=1, column=0,sticky=tk.W)
+        lbl = tk.Label(dnnFrame,text='検証(validation)フォルダ')
+        lbl.grid(row=2, column=0,sticky=tk.W)
+        lbl = tk.Label(dnnFrame,text='クラス数を選択してください。')
+        lbl.grid(row=3, column=0,sticky=tk.W)
+        lbl = tk.Label(dnnFrame,text='クラス名を半角カンマ区切りで入力してください。')
+        lbl.grid(row=4, column=0,sticky=tk.W)
+        lbl = tk.Label(dnnFrame, text='(入力順は0,1,,,9,,,,a,b,c,,,の順番に入力してください。）')
+        lbl.grid(row=5, column=0, sticky=tk.W)
+
+        # テキストボックス
+        trainEntry = tk.Entry(dnnFrame,width=70)  # widthプロパティで大きさを変える
         trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
-        trainEntry.place(x=300, y=labely)
-        valEntry = tk.Entry(width=40)  # widthプロパティで大きさを変える
+        trainEntry.grid(row=1,column=1,sticky=tk.W)
+        valEntry = tk.Entry(dnnFrame,width=70)  # widthプロパティで大きさを変える
         valEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/validation')
-        valEntry.place(x=600, y=labely)
-        classnameEntry = tk.Entry(width=50)
+        valEntry.grid(row=2,column=1,sticky=tk.W)
+        classEntry = tk.Entry(dnnFrame,width=10)  # widthプロパティで大きさを変える
+        classEntry.insert(tk.END, u'4')  # 最初から文字を入れておく
+        classEntry.grid(row=3,column=1,sticky=tk.W)
+        classnameEntry = tk.Entry(dnnFrame,width=50)
         classnameEntry.insert(tk.END,u'None,Si0.05,Si0.10,Si0.20')
-        classnameEntry.place(x=labelx, y=labely + 70)
+        classnameEntry.grid(row=4,column=1,sticky=tk.W)
 
         # ラジオボタンのラベルをリスト化する
         rdo_txt = ['image','1', '2', '3', '4', '5', '6', '7', '8', '9 ', '10']
         # ラジオボタンの状態
         rdo_var = tk.IntVar()
         # ラジオボタンを動的に作成して配置
-        for i in range(6):
-            rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
-            rdo.place(x=900, y=labely+ (i * 24))
-        for i in range(6,len(rdo_txt)):
-            rdo = tk.Radiobutton(self.root, value=i, variable=rdo_var, text=rdo_txt[i])
-            rdo.place(x=980, y=labely+ ((i-6) * 24))
-
-        '''
-        フォルダを分割して選択する場合
-        def class_clicked():
-            classcount = int(classEntry.get())
-            self.trainbutton.config(state='active')
-            for index in range(classcount):
-                # execは""で書かないとstrが打ち込めない！！
-                exec('classnum%d = tk.Entry(width=10)' % (index))
-                exec('classnum%d.place(x=%d+300, y=450 + %d*20)' % (index, labelx, index))
-                exec('classtraindir%d = tk.Entry(width=40)' % (index))
-                exec('classtraindir%d.place(x=%d+400, y=450 + %d*20)' % (index, labelx, index))
-                exec('classvaldir%d = tk.Entry(wi dth=40)' % (index))
-                exec('classvaldir%d.place(x=%d+650, y=450 + %d*20)' % (index, labelx, index))
-                exec("classtrainpath%d = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')" % (index))
-                exec('classtraindir%d.insert(tk.END, classtrainpath%d)' % (index, index))
-                exec("classvalpath%d = tkfd.askdirectory(title='検証(val)フォルダを選択してください')" % (index))
-                exec('classvaldir%d.insert(tk.END, classvalpath%d)' % (index, index))
-                print('Select')
-    
-            ボタン形式下記作成途中
-            def classtrainbutton_clicked(index):
-                exec("classtrainpath{} = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')".format(index))
-                exec("classtraindir{0}.insert(tk.END, classtrainpath{0})".format(index))
-
-            def classvalbutton_clicked(index):
-                exec("classvalpath%d = tkfd.askdirectory(title='検証(val)フォルダを選択してください')" % (index))
-                exec('classvaldir%d.insert(tk.END, classvalpath%d)' % (index, index))
-
-            for index in range(classcount):
-                #execは""で書かないとstrが打ち込めない！！
-                exec('classnum{} = tk.Entry(width=10)'.format(index))
-                exec('classnum%d.place(x=%d+300, y=450 + %d*20)'%(index,labelx,index))
-                exec('classtraindir%d = tk.Entry(width=40)' % (index))
-                exec('classtraindir%d.place(x=%d+400, y=450 + %d*20)' % (index, labelx, index))
-                exec('classvaldir%d = tk.Entry(width=40)' % (index))
-                exec('classvaldir%d.place(x=%d+700, y=450 + %d*20)' % (index, labelx, index))
-                exec("classtrainbutton%d = tk.Button(text='Select', command=lambda: classtrainbutton_clicked(%d))"%(index,index))
-                exec("classtrainbutton{0}.place(x={1}+600, y=440 + {0}*25)".format(index,labelx))
-                #classtrainbutton = tk.Button(text='Select', command=lambda: classtrainbutton_clicked(index))
-                #classtrainbutton.place(x=labelx+600, y=440 + index*25)
-            '''
+        for i in range(len(rdo_txt)):
+            rdo = tk.Radiobutton(dnnFrame, value=i, variable=rdo_var, text=rdo_txt[i])
+            rdo.place(relx=0.12+0.07*i,rely=0)
 
 
         def trainfolderbutton_clicked():
@@ -306,16 +279,6 @@ class GUI:
                 self.trainbutton.config(text="訓練中",state="disable")
                 classcount = int(classEntry.get())
                 imtype = rdo_txt[rdo_var.get()]
-
-                '''
-                traindirlist = []
-                valdirlist = []
-                for index in range(classcount):
-                    exec("traindirlist.append(classtraindir%d)"%(index))
-                    exec("valdirlist.append(classvaldir%d)" % (index))
-                print(traindirlist)
-                DNNClasifier(traindirlist,valdirlist,classcount)
-                '''
                 dnn_classifier = DNNClasifier(imtype,trainEntry.get(),valEntry.get(),classcount)
                 th = threading.Thread(target=dnn_classifier.train)#dnn_classifier.train()のように書くとフリーズします！
                 th.start()
@@ -340,21 +303,21 @@ class GUI:
 
             except RuntimeError:
                 messagebox.showerror('connecterror','USBにカメラが接続されていません。')
-        self.trainbutton = tk.Button(text='Train', command=dnn_train_clicked)
-        self.trainbutton.place(x=labelx+1000, y=labely)
 
-        self.testbutton = tk.Button(text='Realtime-Predict', command=dnn_test_clicked)
-        self.testbutton.place(x=labelx+150, y=labely+100)
+        self.trainfolderbutton = tk.Button(dnnFrame,text='Select', command=trainfolderbutton_clicked)
+        self.trainfolderbutton.grid(row=1,column=2)
 
-        self.statusbutton = tk.Button(text='Update status', command=status_clicked)
-        self.statusbutton.place(x=labelx + 1100, y=labely)
+        self.valfolderbutton = tk.Button(dnnFrame,text='Select', command=valfolderbutton_clicked)
+        self.valfolderbutton.grid(row=2,column=2)
 
-        self.trainfolderbutton= tk.Button(text='Select', command=trainfolderbutton_clicked)
-        self.trainfolderbutton.place(x=labelx + 520, y=labely)
+        self.trainbutton = tk.Button(dnnFrame,text='Train', command=dnn_train_clicked)
+        self.trainbutton.grid(row=6,column=2)
 
-        self.valfolderbutton = tk.Button(text='Select', command=valfolderbutton_clicked)
-        self.valfolderbutton.place(x=labelx + 820, y=labely)
+        self.statusbutton = tk.Button(dnnFrame,text='Update status', command=status_clicked)
+        self.statusbutton.grid(row=6,column=3)
 
+        self.testbutton = tk.Button(dnnFrame,text='Realtime-Predict', command=dnn_test_clicked)
+        self.testbutton.grid(row=6,column=4)
 
 
 class Main:
