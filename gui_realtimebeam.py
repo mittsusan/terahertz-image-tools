@@ -15,7 +15,7 @@ class GUI:
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
-        self.nb = ttk.Notebook(width=1000, height=400)
+        self.nb = ttk.Notebook(width=1000, height=450)
         self.tab1 = tk.Frame(self.nb)
         self.tab2 = tk.Frame(self.nb)
         self.nb.add(self.tab1, text='カメラ')
@@ -87,6 +87,18 @@ class GUI:
             except RuntimeError:
                 messagebox.showerror('connecterror','USBにカメラが接続されていません。')
 
+        def showcolor_clicked():
+            try:
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
+                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                gainEntry_value = int(self.gainEntry.get())
+                expEntry_value = int(self.expEntry.get())
+                th = threading.Thread(target=self.cvv.show_beam_color, args=(trigger_type,gainEntry_value,expEntry_value))
+                th.start()
+            except RuntimeError:
+                messagebox.showerror('connecterror','USBにカメラが接続されていません。')
+
         def selectdir_clicked():
             savepath = tkfd.askdirectory()
             saveEntry.insert(tk.END, savepath)
@@ -110,8 +122,10 @@ class GUI:
         self.selectdir.grid(row=0, column=2)
         self.button1 = tk.Button(saveFrame, text='表示', command=button1_clicked)
         self.button1.grid(row=2, column=2)
+        self.showcolor = tk.Button(saveFrame, text='表示 (カラーマップNボタンで変更可)', command=showcolor_clicked)
+        self.showcolor.grid(row=2, column=3)
         self.save = tk.Button(saveFrame,text='保存', command=save_clicked)
-        self.save.grid(row=2, column=3)
+        self.save.grid(row=2, column=4)
 
     def ellipseFrame(self):
         configelipseFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="共通設定（下記の二つで使います。）")
@@ -304,20 +318,39 @@ class GUI:
             except RuntimeError:
                 messagebox.showerror('connecterror','USBにカメラが接続されていません。')
 
+        def dnn_test_color_clicked():
+            try:
+                self.cvv = ShowInfraredCamera()
+                self.cvv = None
+                classcount = int(classEntry.get())
+                classnamelist = sorted(classnameEntry.get().split(','))
+                print('sorted:classname{}'.format(classnamelist))
+                if len(classnamelist) == classcount:
+                    trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                    gainEntry_value = int(self.gainEntry.get())
+                    expEntry_value = int(self.expEntry.get())
+                    imtype = rdo_txt[rdo_var.get()]
+                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
+                    th = threading.Thread(target=dnn_classifier.test_color, args=(trigger_type,gainEntry_value,expEntry_value,classnamelist))
+                    th.start()
+                else:
+                    messagebox.showerror('classnameerror','クラス名の数とクラス数が一致していません。')
+
+            except RuntimeError:
+                messagebox.showerror('connecterror','USBにカメラが接続されていません。')
+
         self.trainfolderbutton = tk.Button(dnnFrame,text='Select', command=trainfolderbutton_clicked)
         self.trainfolderbutton.grid(row=1,column=2)
-
         self.valfolderbutton = tk.Button(dnnFrame,text='Select', command=valfolderbutton_clicked)
         self.valfolderbutton.grid(row=2,column=2)
-
         self.trainbutton = tk.Button(dnnFrame,text='Train', command=dnn_train_clicked)
         self.trainbutton.grid(row=6,column=2)
-
         self.statusbutton = tk.Button(dnnFrame,text='Update status', command=status_clicked)
         self.statusbutton.grid(row=6,column=3)
-
         self.testbutton = tk.Button(dnnFrame,text='Realtime-Predict', command=dnn_test_clicked)
         self.testbutton.grid(row=6,column=4)
+        self.testcolorbutton = tk.Button(dnnFrame, text='Realtime-Predict (カラーマップ)', command=dnn_test_color_clicked)
+        self.testcolorbutton.grid(row=7, column=4)
 
 
 class Main:

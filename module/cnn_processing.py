@@ -112,3 +112,24 @@ class CNN:
             show_infrared_camera.realtime_identification(classnamelist,model,trigger_type,gain,exp,self.im_size_width,self.im_size_height,self.flip)
             cbks = []
         KTF.set_session(old_session)
+
+    def cnn_test_color(self, trigger_type, gain, exp, classnamelist):
+        # ニュートラルネットワークで使用するモデル作成
+        model_filename = 'cnn_model.json'
+        weights_filename = 'cnn_weights.hdf5'
+        old_session = KTF.get_session()
+        show_infrared_camera = None
+        show_infrared_camera = ShowInfraredCamera()
+        with tf.Graph().as_default():
+            session = tf.Session('')
+            KTF.set_session(session)
+            json_string = open(os.path.join(self.f_model, model_filename)).read()
+            model = model_from_json(json_string)
+            model.summary()
+            adam = keras.optimizers.Adam(lr=self.learning_rate)
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            model.load_weights(os.path.join(self.f_model, weights_filename))
+            show_infrared_camera.realtime_identification_color(classnamelist, model, trigger_type, gain, exp,
+                                                         self.im_size_width, self.im_size_height, self.flip)
+            cbks = []
+        KTF.set_session(old_session)

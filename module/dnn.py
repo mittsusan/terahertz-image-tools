@@ -164,3 +164,9 @@ class DNNClasifier:
         CNN(self.classnum, self.traindir, self.im_size_width, self.im_size_height,
             self.flip).cnn_test(trigger_type, gain, exp, classnamelist)
         return
+
+    def test_color(self,trigger_type,gain,exp,classnamelist):
+
+        CNN(self.classnum, self.traindir, self.im_size_width, self.im_size_height,
+            self.flip).cnn_test_color(trigger_type, gain, exp, classnamelist)
+        return
