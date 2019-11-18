@@ -15,7 +15,7 @@ class GUI:
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
-        self.nb = ttk.Notebook(width=1000, height=450)
+        self.nb = ttk.Notebook(width=1000, height=400)
         self.tab1 = tk.Frame(self.nb)
         self.tab2 = tk.Frame(self.nb)
         self.nb.add(self.tab1, text='カメラ')
@@ -124,7 +124,7 @@ class GUI:
         self.button1.grid(row=2, column=2)
         self.showcolor = tk.Button(saveFrame, text='表示 (カラーマップNボタンで変更可)', command=showcolor_clicked)
         self.showcolor.grid(row=2, column=3)
-        self.save = tk.Button(saveFrame,text='保存', command=save_clicked)
+        self.save = tk.Button(saveFrame,text='保存 (識別中でも使用可)', command=save_clicked)
         self.save.grid(row=2, column=4)
 
     def ellipseFrame(self):
@@ -237,28 +237,15 @@ class GUI:
         lbl.grid(row=0, column=0,sticky=tk.W,pady=2)
         lbl = tk.Label(dnnFrame,text='訓練(train)フォルダ')
         lbl.grid(row=1, column=0,sticky=tk.W)
-        lbl = tk.Label(dnnFrame,text='検証(validation)フォルダ')
+        lbl = tk.Label(dnnFrame,text='検証(validation)フォルダ (任意)')
         lbl.grid(row=2, column=0,sticky=tk.W)
-        lbl = tk.Label(dnnFrame,text='クラス数を選択してください。')
-        lbl.grid(row=3, column=0,sticky=tk.W)
-        lbl = tk.Label(dnnFrame,text='クラス名を半角カンマ区切りで入力してください。')
-        lbl.grid(row=4, column=0,sticky=tk.W)
-        lbl = tk.Label(dnnFrame, text='(入力順は0,1,,,9,,,,a,b,c,,,の順番に入力してください。）')
-        lbl.grid(row=5, column=0, sticky=tk.W)
 
         # テキストボックス
         trainEntry = tk.Entry(dnnFrame,width=70)  # widthプロパティで大きさを変える
         trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
         trainEntry.grid(row=1,column=1,sticky=tk.W)
         valEntry = tk.Entry(dnnFrame,width=70)  # widthプロパティで大きさを変える
-        valEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/validation')
         valEntry.grid(row=2,column=1,sticky=tk.W)
-        classEntry = tk.Entry(dnnFrame,width=10)  # widthプロパティで大きさを変える
-        classEntry.insert(tk.END, u'4')  # 最初から文字を入れておく
-        classEntry.grid(row=3,column=1,sticky=tk.W)
-        classnameEntry = tk.Entry(dnnFrame,width=50)
-        classnameEntry.insert(tk.END,u'None,Si0.05,Si0.10,Si0.20')
-        classnameEntry.grid(row=4,column=1,sticky=tk.W)
 
         # ラジオボタンのラベルをリスト化する
         rdo_txt = ['image','1', '2', '3', '4', '5', '6', '7', '8', '9 ', '10']
@@ -287,33 +274,33 @@ class GUI:
                 messagebox.showinfo('status','訓練中です。')
 
         def dnn_train_clicked():
-            if len(trainEntry.get()) + len(valEntry.get()) == 0:
-                messagebox.showerror('エラー','訓練or検証フォルダが選択されていません。')
+
+            if len(trainEntry.get()) == 0:
+                messagebox.showerror('エラー','訓練フォルダが選択されていません。')
             else:
-                self.trainbutton.config(text="訓練中",state="disable")
-                classcount = int(classEntry.get())
                 imtype = rdo_txt[rdo_var.get()]
-                dnn_classifier = DNNClasifier(imtype,trainEntry.get(),valEntry.get(),classcount)
-                th = threading.Thread(target=dnn_classifier.train)#dnn_classifier.train()のように書くとフリーズします！
-                th.start()
+                if imtype == 'image':
+                    self.trainbutton.config(text="訓練中",state="disable")
+                    dnn_classifier = DNNClasifier(imtype,trainEntry.get(),valEntry.get())
+                    th = threading.Thread(target=dnn_classifier.train)#dnn_classifier.train()のように書くとフリーズします！
+                    th.start()
+                else:
+                    messagebox.showerror('selecterror','現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
 
         def dnn_test_clicked():
             try:
                 self.cvv = ShowInfraredCamera()
                 self.cvv = None
-                classcount = int(classEntry.get())
-                classnamelist = sorted(classnameEntry.get().split(','))
-                print('sorted:classname{}'.format(classnamelist))
-                if len(classnamelist) == classcount:
+                imtype = rdo_txt[rdo_var.get()]
+                if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                     gainEntry_value = int(self.gainEntry.get())
                     expEntry_value = int(self.expEntry.get())
-                    imtype = rdo_txt[rdo_var.get()]
-                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
-                    th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value,classnamelist))
+                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get())
+                    th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value))
                     th.start()
                 else:
-                    messagebox.showerror('classnameerror','クラス名の数とクラス数が一致していません。')
+                    messagebox.showerror('selecterror', '現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
 
             except RuntimeError:
                 messagebox.showerror('connecterror','USBにカメラが接続されていません。')
@@ -322,19 +309,16 @@ class GUI:
             try:
                 self.cvv = ShowInfraredCamera()
                 self.cvv = None
-                classcount = int(classEntry.get())
-                classnamelist = sorted(classnameEntry.get().split(','))
-                print('sorted:classname{}'.format(classnamelist))
-                if len(classnamelist) == classcount:
+                imtype = rdo_txt[rdo_var.get()]
+                if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                     gainEntry_value = int(self.gainEntry.get())
                     expEntry_value = int(self.expEntry.get())
-                    imtype = rdo_txt[rdo_var.get()]
-                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get(), classcount)
-                    th = threading.Thread(target=dnn_classifier.test_color, args=(trigger_type,gainEntry_value,expEntry_value,classnamelist))
+                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get())
+                    th = threading.Thread(target=dnn_classifier.test_color, args=(trigger_type,gainEntry_value,expEntry_value))
                     th.start()
                 else:
-                    messagebox.showerror('classnameerror','クラス名の数とクラス数が一致していません。')
+                    messagebox.showerror('selecterror', '現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
 
             except RuntimeError:
                 messagebox.showerror('connecterror','USBにカメラが接続されていません。')

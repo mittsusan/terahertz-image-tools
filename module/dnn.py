@@ -1,22 +1,23 @@
 import os
 import numpy as np
 from keras.utils import np_utils
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import glob
 import cv2
 from module.cnn_processing import CNN
 
 
 class DNNClasifier:
-    def __init__(self,imtype,traindir,valdir,classnum):
+    def __init__(self,imtype,traindir,valdir):
         self.imtype = imtype
+        self.sampledir = os.path.dirname(traindir)
         self.traindir = traindir
         self.valdir = valdir
-        self.classnum = classnum
         if self.imtype == 'image':
             self.im_size_width = 30
             self.im_size_height = 44
             self.flip = 1  # 1の場合画像を左右反転,0の場合、上下反転、-1の場合上下左右反転、Noneでなし。
+
     def train(self):
         def load_pic(data_path):
             # ファイルのパスの読み込み
@@ -56,6 +57,7 @@ class DNNClasifier:
             file_np = np.array(file_list)
             # print(file_np.shape)
             return file_np
+
         def label_append(data_path):
             y_all = []
             flag = 0
@@ -82,91 +84,112 @@ class DNNClasifier:
                         number = number + 1
                 except FileNotFoundError as e:
                     print(e)
-            return (x_all, y_all)
+
+            return x_all, y_all, file_list
 
         if self.imtype == 'image':
 
             npy_train_data_dir = self.traindir  + 'width' + str(
                 self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(self.flip)
-            npy_val_data_dir = self.valdir  + 'width' + str(
-                self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(self.flip)
+
+            if len(self.valdir) == 0:
+                pass
+            else:
+                npy_val_data_dir = self.valdir  + 'width' + str(
+                    self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(self.flip)
         else:
             npy_train_data_dir = self.traindir  + self.imtype
-            npy_val_data_dir = self.valdir  + self.imtype
+            if len(self.valdir) == 0:
+                pass
+            else:
+                npy_val_data_dir = self.valdir  + self.imtype
 
+        #サンプル配下ディレクトリに入る
         train_data_Xnpy = npy_train_data_dir + 'X.npy'
         train_data_Ynpy = npy_train_data_dir + 'Y.npy'
-        val_data_Xnpy = npy_val_data_dir + 'X.npy'
-        val_data_Ynpy = npy_val_data_dir + 'Y.npy'
-
-        if os.path.exists(train_data_Xnpy):
+        if len(self.valdir) == 0:
             pass
-            print('pass')
         else:
-            print('pass出来ていない')
-            (x_all_1, y_all_1) = label_append(self.traindir)
-            (x_all_2, y_all_2) = label_append(self.valdir)
+            val_data_Xnpy = npy_val_data_dir + 'X.npy'
+            val_data_Ynpy = npy_val_data_dir + 'Y.npy'
+
+        ##npyデータファイル読み込みor保存
+        if os.path.exists(train_data_Xnpy) and os.path.exists(train_data_Ynpy):
+            print('npyデータ存在')
+            X_train = np.load(train_data_Xnpy)
+            Y_train = np.load(train_data_Ynpy)
+            if len(self.valdir) == 0:
+                pass
+            else:
+                X_test = np.load(val_data_Xnpy)
+                Y_test = np.load(val_data_Ynpy)
+
+            # class名読み込み
+            with open(os.path.join(self.sampledir,'classname.txt')) as f:
+                class_list = [s.strip() for s in f.readlines()]
+                print(class_list)
+
+        else:
+            print('データ読み込み')
+            x_all_1, y_all_1, class_list = label_append(self.traindir)
+            if len(self.valdir) == 0:
+                pass
+            else:
+                x_all_2, y_all_2, class_list = label_append(self.valdir)
             # 画素値を0から1の範囲に変換
             X_1 = x_all_1.astype('float32')
             X_train = X_1 / 255.0
+            Y_train = np_utils.to_categorical(np.array(y_all_1), len(class_list))
+            if len(self.valdir) == 0:
+                pass
+            else:
+                X_2 = x_all_2.astype('float32')
+                X_test = X_2 / 255.0
+                Y_test = np_utils.to_categorical(np.array(y_all_2), len(class_list))
 
-            X_2 = x_all_2.astype('float32')
-            X_test = X_2 / 255.0
 
-            # クラスの形式を変換
-            Y_train = np_utils.to_categorical(np.array(y_all_1), self.classnum)
-            Y_test = np_utils.to_categorical(np.array(y_all_2), self.classnum)
+            #クラス名保存
+            with open(os.path.join(self.sampledir,'classname.txt'), 'wt') as f:
+                for ele in class_list:
+                    basename = os.path.basename(ele)
+                    root, ext = os.path.splitext(basename)
+                    f.write(root + '\n')
 
-
-        ##npyデータファイル読み込みor保存
-        if os.path.exists(train_data_Xnpy):
-            X_train = np.load(train_data_Xnpy)
-
-        else:
+            # npy保存
             np.save(npy_train_data_dir + 'X', X_train)
-
-        if os.path.exists(train_data_Ynpy):
-            Y_train = np.load(train_data_Ynpy)
-
-        else:
             np.save(npy_train_data_dir + 'Y', Y_train)
-
-        if os.path.exists(val_data_Xnpy):
-            X_test = np.load(val_data_Xnpy)
-
-        else:
-            np.save(npy_val_data_dir + 'X', X_test)
-
-        if os.path.exists(val_data_Ynpy):
-            Y_test = np.load(val_data_Ynpy)
-
-        else:
-            np.save(npy_val_data_dir + 'Y', Y_test)
+            if len(self.valdir) == 0:
+                pass
+            else:
+                np.save(npy_val_data_dir + 'X', X_test)
+                np.save(npy_val_data_dir + 'Y', Y_test)
 
         print(X_train.shape)
-        print(X_test.shape)
 
         if self.imtype == 'image':
 
             X_train.resize(X_train.shape[0], X_train.shape[1], X_train.shape[2], 1)
-            X_test.resize(X_test.shape[0], X_test.shape[1], X_test.shape[2], 1)
-            CNN(self.classnum, self.traindir, self.im_size_width, self.im_size_height,
+            if len(self.valdir) == 0:
+                CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
+                    self.flip).cnn_train_noneval(X_train, Y_train)
+            else:
+                X_test.resize(X_test.shape[0], X_test.shape[1], X_test.shape[2], 1)
+                CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
                 self.flip).cnn_train(X_train, Y_train, X_test, Y_test)
 
         else:
-            print(X_train.shape[1:])
-            # print(type(X_test))
-            # print(Y_train)
-            # print(type(Y_test))
+            pass
 
-    def test(self,trigger_type,gain,exp,classnamelist):
+    def test(self,trigger_type,gain,exp):
+        # class名読み込み
+        with open(os.path.join(self.sampledir, 'classname.txt')) as f:
+            class_list = [s.strip() for s in f.readlines()]
+        CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
+            self.flip).cnn_test(trigger_type, gain, exp, class_list)
 
-        CNN(self.classnum, self.traindir, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test(trigger_type, gain, exp, classnamelist)
-        return
-
-    def test_color(self,trigger_type,gain,exp,classnamelist):
-
-        CNN(self.classnum, self.traindir, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test_color(trigger_type, gain, exp, classnamelist)
-        return
+    def test_color(self,trigger_type,gain,exp):
+        # class名読み込み
+        with open(os.path.join(self.sampledir, 'classname.txt')) as f:
+            class_list = [s.strip() for s in f.readlines()]
+        CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
+            self.flip).cnn_test_color(trigger_type, gain, exp, class_list)

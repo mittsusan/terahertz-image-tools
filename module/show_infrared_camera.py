@@ -110,8 +110,11 @@ class ShowInfraredCamera():
             apply_color_map_image = cv2.applyColorMap(frame,
                                                       self.colormap_table[self.colormap_table_count % len(self.colormap_table)][1])
 
-            cv2.putText(apply_color_map_image, self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
+            '''
+            cv2.putText(apply_color_map_image,
+                        self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
                         (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
+            '''
 
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(apply_color_map_image, (1024, 1024)))
@@ -119,7 +122,7 @@ class ShowInfraredCamera():
 
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), frame)
+                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), apply_color_map_image)
                 self.savecount += -1
                 print('saveimage:{}'.format(self.savecount))
 
@@ -321,15 +324,18 @@ class ShowInfraredCamera():
             # 疑似カラーを付与
             apply_color_map_image = cv2.applyColorMap(frame,self.colormap_table[self.colormap_table_count % len(self.colormap_table)][1])
 
+            '''
             cv2.putText(apply_color_map_image,
                         self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
                         (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
+            '''
+
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(apply_color_map_image, (1024, 1024)))
 
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), frame)
+                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), apply_color_map_image)
                 self.savecount += -1
                 print('saveimage:{}'.format(self.savecount))
 

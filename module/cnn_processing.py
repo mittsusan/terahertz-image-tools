@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from module.show_infrared_camera import ShowInfraredCamera
 
 class CNN:
-    def __init__(self,classnum,traindir,im_size_width,im_size_height,flip):
+    def __init__(self, classnum, traindir, im_size_width, im_size_height, flip):
         self.conv1 = 30
         self.conv2 = 20
         self.conv3 = 10
@@ -36,7 +36,7 @@ class CNN:
         os.makedirs(self.f_model, exist_ok=True)
         os.makedirs(self.f_log, exist_ok=True)
 
-    def cnn_train(self,X_train,Y_train,X_test,Y_test):
+    def cnn_train(self, X_train, Y_train, X_test, Y_test):
         conv1 = self.conv1
         conv2 = self.conv2
         conv3 = self.conv3
@@ -44,7 +44,7 @@ class CNN:
         dense2 = self.dense2
         # ニュートラルネットワークで使用するモデル作成
         old_session = KTF.get_session()
-        #old_session = tf.compat.v1.keras.backend.get_session()
+        # old_session = tf.compat.v1.keras.backend.get_session()
         with tf.Graph().as_default():
             session = tf.Session('')
             KTF.set_session(session)
@@ -93,7 +93,57 @@ class CNN:
         KTF.set_session(old_session)
         return
 
-    def cnn_test(self,trigger_type,gain,exp,classnamelist):
+    def cnn_train_noneval(self, X_train, Y_train):
+        conv1 = self.conv1
+        conv2 = self.conv2
+        conv3 = self.conv3
+        dense1 = self.dense1
+        dense2 = self.dense2
+        # ニュートラルネットワークで使用するモデル作成
+        old_session = KTF.get_session()
+        #old_session = tf.compat.v1.keras.backend.get_session()
+        with tf.Graph().as_default():
+            session = tf.Session('')
+            KTF.set_session(session)
+            KTF.set_learning_phase(1)
+
+            model = Sequential()
+
+            model.add(Conv2D(conv1, kernel_size=(3, 3), activation='relu', input_shape=(X_train.shape[1:])))
+            model.add(MaxPooling2D(pool_size=(2, 2)))
+            model.add(Conv2D(conv2, (3, 3), activation='relu'))
+            model.add(MaxPooling2D(pool_size=(2, 2)))
+            model.add(Conv2D(conv3, (3, 3), activation='relu'))
+            # model.add(Dropout(0.25))
+            # model.add(Conv2D(128, (3, 3), padding='same',activation='relu'))
+            # model.add(MaxPooling2D(pool_size=(2, 2)))
+            # model.add(Dropout(0.25))
+            model.add(Flatten())
+            model.add(Dense(dense1, activation='relu'))
+            # model.add(Dropout(0.5))
+            model.add(Dense(self.classnum, activation='softmax'))
+            model.summary()
+            # optimizer には adam を指定
+            adam = keras.optimizers.Adam(lr=self.learning_rate)
+
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            # model.compile(loss='sparse_categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
+
+            history = model.fit(X_train, Y_train, batch_size=self.nb_batch, epochs=self.nb_epoch,
+                                validation_data=None, callbacks=None, verbose=1)
+
+            print('save the architecture of a model')
+            json_string = model.to_json()
+            open(os.path.join(self.f_model, 'cnn_model.json'), 'w').write(json_string)
+            yaml_string = model.to_yaml()
+            open(os.path.join(self.f_model, 'cnn_model.yaml'), 'w').write(yaml_string)
+            print('save weights')
+            model.save_weights(os.path.join(self.f_model, 'cnn_weights.hdf5'))
+        KTF.set_session(old_session)
+        return
+
+    def cnn_test(self, trigger_type, gain, exp, classnamelist):
         # ニュートラルネットワークで使用するモデル作成
         model_filename = 'cnn_model.json'
         weights_filename = 'cnn_weights.hdf5'
