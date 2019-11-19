@@ -57,7 +57,11 @@ Python 3.6.8を[公式ページ](https://www.python.org/downloads/)からダウ�
 ```
 $ python -m pip install numpy
 ```
+`matplotlib`をインストールする
 
+```
+$ python -m pip install matplotlib
+```
 `opencv-python`をインストールする
 
 ```
@@ -76,6 +80,28 @@ $ python -c "import numpy as np; print(np.__version__)"
 $ python -c "import cv2; print(cv2.__version__)"
 4.1.0
 $ python -c "import PySpin"
+```
+
+以下Pyspinに関して詳細追記
+https://flir.app.boxcn.net/v/SpinnakerSDK/folder/73501875299
+からバージョン選択後ダウンロード。
+(python 3.6.8 だとspinnaker_python-1.27.0.48-cp36-cp36m-win_amd64.zipをダウンロード)
+その後whlファイルからインストール
+
+```
+$ python -m pip install /User/....../spinnaker_python-1.27.0.48-cp36-cp36m-win_amd64.whl
+```
+
+`tensorflow==1.15`をインストールする
+
+```
+$ python -m pip install tensorflow==1.15
+```
+
+`keras`をインストールする
+
+```
+$ python -m pip install keras
 ```
 
 ## ファイルの説明
