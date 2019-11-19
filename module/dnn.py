@@ -180,16 +180,16 @@ class DNNClasifier:
         else:
             pass
 
-    def test(self,trigger_type,gain,exp):
+    def test(self, trigger_type, gain, exp, cvv):
         # class名読み込み
         with open(os.path.join(self.sampledir, 'classname.txt')) as f:
             class_list = [s.strip() for s in f.readlines()]
         CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test(trigger_type, gain, exp, class_list)
+            self.flip).cnn_test(trigger_type, gain, exp, class_list, cvv)
 
-    def test_color(self,trigger_type,gain,exp):
+    def test_color(self, trigger_type, gain, exp, cvv):
         # class名読み込み
         with open(os.path.join(self.sampledir, 'classname.txt')) as f:
             class_list = [s.strip() for s in f.readlines()]
         CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test_color(trigger_type, gain, exp, class_list)
+            self.flip).cnn_test_color(trigger_type, gain, exp, class_list, cvv)

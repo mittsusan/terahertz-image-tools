@@ -13,19 +13,17 @@ from module.arrange_value import ArrangeValue
 
 class GUI:
     def __init__(self):
+        self.cvv = ShowInfraredCamera()
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root=tk.Tk()
         self.nb = ttk.Notebook(width=1000, height=400)
         self.tab1 = tk.Frame(self.nb)
         self.tab2 = tk.Frame(self.nb)
-        self.nb.add(self.tab1, text='カメラ')
-        self.nb.add(self.tab2, text='ビーム積算')
+        self.nb.add(self.tab1, text='近赤外カメラ')
+        self.nb.add(self.tab2, text='ビーム積算(グレースケール画像のみ対応)')
         self.nb.pack(expand=1, fill='both')
-        #self.ROOT_X = 1000
-        #self.ROOT_Y = 700
         self.root.title(u"Real-time Beam Identification 2019 made by Mitsuhashi")
-        #self.root.geometry(str(self.ROOT_X) + "x" + str(self.ROOT_Y))
         self.root.resizable(width=0, height=0)
         self.cameraFrame() #トリガー、ゲイン、露出、保存を決めるフレーム
         self.ellipseFrame()
@@ -57,18 +55,19 @@ class GUI:
             self.trigger_rdo = tk.Radiobutton(configFrame, value=i, variable=self.trigger_rdo_var,
                                               text=self.trigger_rdo_txt[i])
             self.trigger_rdo.grid(row=0,column=i+1,sticky=tk.W)
+
         # ゲインのテキストボックスを出現させる
         self.gainEntry = tk.Entry(configFrame,width=20)  # widthプロパティで大きさを変える
-        self.gainEntry.insert(tk.END, u'30')  # 最初から文字を入れておく
+        self.gainEntry.insert(tk.END, u'40')  # 最初から文字を入れておく
         self.gainEntry.grid(row=1, column=1)
 
         # 露出のテキストボックスを出現させる
         self.expEntry = tk.Entry(configFrame,width=20)  # widthプロパティで大きさを変える
-        self.expEntry.insert(tk.END, u'100000')  # 最初から文字を入れておく
+        self.expEntry.insert(tk.END, u'30000')  # 最初から文字を入れておく
         self.expEntry.grid(row=2, column=1)
 
         # 保存先のテキストボックスを出現させる
-        saveEntry = tk.Entry(saveFrame,width=70)  # widthプロパティで大きさを変える
+        saveEntry = tk.Entry(saveFrame,width=80)  # widthプロパティで大きさを変える
         saveEntry.grid(row=0, column=1)
 
         # 保存数のテキストボックスを出現させる
@@ -78,8 +77,8 @@ class GUI:
 
         def button1_clicked():
             try:
-                self.cvv = None
-                self.cvv = ShowInfraredCamera()
+                #self.cvv = None
+                #self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
@@ -90,8 +89,8 @@ class GUI:
 
         def showcolor_clicked():
             try:
-                self.cvv = None
-                self.cvv = ShowInfraredCamera()
+                #self.cvv = None
+                #self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
@@ -120,6 +119,14 @@ class GUI:
             except AttributeError:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
+        def norm_clicked():
+            try:
+                self.cvv.min_max_flag()
+                print('min-max-normalization')
+
+            except AttributeError:
+                messagebox.showerror('starterror', 'カメラが起動していません。')
+
 
         self.selectdir = tk.Button(saveFrame,text='Select', command=selectdir_clicked)
         self.selectdir.grid(row=0, column=2)
@@ -131,6 +138,8 @@ class GUI:
         self.showcolor.grid(row=2, column=3)
         self.save = tk.Button(saveFrame,text='保存 (識別中でも使用可)', command=save_clicked)
         self.save.grid(row=2, column=4)
+        self.norm = tk.Button(saveFrame, text='min-max-normalization', command=norm_clicked)
+        self.norm.grid(row=3, column=4)
 
     def ellipseFrame(self):
         configelipseFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="共通設定（下記の二つで使います。）")
@@ -163,9 +172,9 @@ class GUI:
         beamsEntry = tk.Entry(configelipseFrame, width=10)  # widthプロパティで大きさを変える
         beamsEntry.insert(tk.END, u'2')  # 最初から文字を入れておく
         beamsEntry.grid(row=0, column=1, sticky=tk.W)
-        accuminputEntry = tk.Entry(configelipseFrame, width=70)  # widthプロパティで大きさを変える
+        accuminputEntry = tk.Entry(configelipseFrame, width=80)  # widthプロパティで大きさを変える
         accuminputEntry.grid(row=1, column=1, sticky=tk.W)
-        outputEntry = tk.Entry(configelipseFrame, width=70)  # widthプロパティで大きさを変える
+        outputEntry = tk.Entry(configelipseFrame, width=80)  # widthプロパティで大きさを変える
         outputEntry.grid(row=2, column=1, sticky=tk.W)
 
 
@@ -179,7 +188,7 @@ class GUI:
         threshEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
         threshEntry.grid(row=2, column=1, sticky=tk.W)
 
-        accumoutputEntry = tk.Entry(accumellipseFrame,width=70)  # widthプロパティで大きさを変える
+        accumoutputEntry = tk.Entry(accumellipseFrame,width=80)  # widthプロパティで大きさを変える
         accumoutputEntry.grid(row=0, column=1, sticky=tk.W)
 
 
@@ -253,10 +262,10 @@ class GUI:
         lbl.grid(row=2, column=0,sticky=tk.W)
 
         # テキストボックス
-        trainEntry = tk.Entry(dnnFrame,width=70)  # widthプロパティで大きさを変える
+        trainEntry = tk.Entry(dnnFrame,width=80)  # widthプロパティで大きさを変える
         trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
         trainEntry.grid(row=1,column=1,sticky=tk.W)
-        valEntry = tk.Entry(dnnFrame,width=70)  # widthプロパティで大きさを変える
+        valEntry = tk.Entry(dnnFrame,width=80)  # widthプロパティで大きさを変える
         valEntry.grid(row=2,column=1,sticky=tk.W)
 
         # ラジオボタンのラベルをリスト化する
@@ -306,15 +315,15 @@ class GUI:
 
         def dnn_test_clicked():
             try:
-                self.cvv = ShowInfraredCamera()
-                self.cvv = None
+                #self.cvv = ShowInfraredCamera()
+                #self.cvv = None
                 imtype = rdo_txt[rdo_var.get()]
                 if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                     gainEntry_value = int(self.gainEntry.get())
                     expEntry_value = int(self.expEntry.get())
                     dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get())
-                    th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value))
+                    th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value, self.cvv))
                     th.start()
                 else:
                     messagebox.showerror('selecterror', '現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
@@ -324,15 +333,15 @@ class GUI:
 
         def dnn_test_color_clicked():
             try:
-                self.cvv = ShowInfraredCamera()
-                self.cvv = None
+                #self.cvv = ShowInfraredCamera()
+                #self.cvv = None
                 imtype = rdo_txt[rdo_var.get()]
                 if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                     gainEntry_value = int(self.gainEntry.get())
                     expEntry_value = int(self.expEntry.get())
                     dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get())
-                    th = threading.Thread(target=dnn_classifier.test_color, args=(trigger_type,gainEntry_value,expEntry_value))
+                    th = threading.Thread(target=dnn_classifier.test_color, args=(trigger_type,gainEntry_value,expEntry_value, self.cvv))
                     th.start()
                 else:
                     messagebox.showerror('selecterror', '現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
