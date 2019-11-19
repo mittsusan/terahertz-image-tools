@@ -8,6 +8,7 @@ from module.create_reference import CreateReference
 from module.show_infrared_camera import ShowInfraredCamera
 from module.accumulate_intensity import AccumulateIntensity
 from module.dnn import DNNClasifier
+from module.arrange_value import ArrangeValue
 
 
 class GUI:
@@ -58,12 +59,12 @@ class GUI:
             self.trigger_rdo.grid(row=0,column=i+1,sticky=tk.W)
         # ゲインのテキストボックスを出現させる
         self.gainEntry = tk.Entry(configFrame,width=20)  # widthプロパティで大きさを変える
-        self.gainEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
+        self.gainEntry.insert(tk.END, u'30')  # 最初から文字を入れておく
         self.gainEntry.grid(row=1, column=1)
 
         # 露出のテキストボックスを出現させる
         self.expEntry = tk.Entry(configFrame,width=20)  # widthプロパティで大きさを変える
-        self.expEntry.insert(tk.END, u'20000')  # 最初から文字を入れておく
+        self.expEntry.insert(tk.END, u'100000')  # 最初から文字を入れておく
         self.expEntry.grid(row=2, column=1)
 
         # 保存先のテキストボックスを出現させる
@@ -103,6 +104,9 @@ class GUI:
             savepath = tkfd.askdirectory()
             saveEntry.insert(tk.END, savepath)
 
+        def select_cleardir_clicked():
+            saveEntry.delete(0,tk.END)
+
         def save_clicked():
             savecount = int(numEntry.get())
             try:
@@ -117,12 +121,13 @@ class GUI:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
 
-
         self.selectdir = tk.Button(saveFrame,text='Select', command=selectdir_clicked)
         self.selectdir.grid(row=0, column=2)
+        self.select_cleardir = tk.Button(saveFrame, text='Clear', command=select_cleardir_clicked)
+        self.select_cleardir.grid(row=0, column=3)
         self.button1 = tk.Button(saveFrame, text='表示', command=button1_clicked)
         self.button1.grid(row=2, column=2)
-        self.showcolor = tk.Button(saveFrame, text='表示 (カラーマップNボタンで変更可)', command=showcolor_clicked)
+        self.showcolor = tk.Button(saveFrame, text='表示 (カラーNボタンで変更可)', command=showcolor_clicked)
         self.showcolor.grid(row=2, column=3)
         self.save = tk.Button(saveFrame,text='保存 (識別中でも使用可)', command=save_clicked)
         self.save.grid(row=2, column=4)
@@ -137,8 +142,11 @@ class GUI:
 
         lbl = tk.Label(configelipseFrame,text='ビームの本数を選択してください')
         lbl.grid(row=0, column=0, sticky=tk.W)
-        lbl = tk.Label(configelipseFrame,text='ビームの形を保存するor利用するディレクトリを選択してください。')
+        lbl = tk.Label(configelipseFrame, text='積算したいビーム画像を格納したディレクトリを選択してください。')
         lbl.grid(row=1, column=0, sticky=tk.W)
+        lbl = tk.Label(configelipseFrame, text='ビームの形を保存するor利用するディレクトリを選択してください。')
+        lbl.grid(row=2, column=0, sticky=tk.W)
+
 
         lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長の最小閾値を選択してください。')
         lbl.grid(row=0, column=0, sticky=tk.W)
@@ -146,20 +154,20 @@ class GUI:
         lbl.grid(row=1, column=0, sticky=tk.W)
         lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。')
         lbl.grid(row=2, column=0, sticky=tk.W)
-        lbl = tk.Label(ellipseparamFrame,text='リファレンス画像を保存したディレクトリを選択してください。')
-        lbl.grid(row=3, column=0, sticky=tk.W)
 
-        lbl = tk.Label(accumellipseFrame,text='積算したいビーム画像を格納したディレクトリを選択してください。')
+
+        lbl = tk.Label(accumellipseFrame, text='積算データ(txt)を保存するディレクトリを選択してください。')
         lbl.grid(row=0, column=0, sticky=tk.W)
-        lbl = tk.Label(accumellipseFrame,text='積算データを保存するディレクトリを選択してください。')
-        lbl.grid(row=1, column=0, sticky=tk.W)
 
         # テキストボックス
         beamsEntry = tk.Entry(configelipseFrame, width=10)  # widthプロパティで大きさを変える
-        beamsEntry.insert(tk.END, u'3')  # 最初から文字を入れておく
+        beamsEntry.insert(tk.END, u'2')  # 最初から文字を入れておく
         beamsEntry.grid(row=0, column=1, sticky=tk.W)
-        outputEntry = tk.Entry(configelipseFrame, width=40)  # widthプロパティで大きさを変える
-        outputEntry.grid(row=1, column=1, sticky=tk.W)
+        accuminputEntry = tk.Entry(configelipseFrame, width=70)  # widthプロパティで大きさを変える
+        accuminputEntry.grid(row=1, column=1, sticky=tk.W)
+        outputEntry = tk.Entry(configelipseFrame, width=70)  # widthプロパティで大きさを変える
+        outputEntry.grid(row=2, column=1, sticky=tk.W)
+
 
         minEntry = tk.Entry(ellipseparamFrame, width=10)  # widthプロパティで大きさを変える
         minEntry.insert(tk.END, u'100')  # 最初から文字を入れておく
@@ -170,25 +178,20 @@ class GUI:
         threshEntry = tk.Entry(ellipseparamFrame, width=10)  # widthプロパティで大きさを変える
         threshEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
         threshEntry.grid(row=2, column=1, sticky=tk.W)
-        inputEntry = tk.Entry(ellipseparamFrame,width=40)  # widthプロパティで大きさを変える
-        inputEntry.grid(row=3, column=1, sticky=tk.W)
 
+        accumoutputEntry = tk.Entry(accumellipseFrame,width=70)  # widthプロパティで大きさを変える
+        accumoutputEntry.grid(row=0, column=1, sticky=tk.W)
 
-        accuminputEntry = tk.Entry(accumellipseFrame,width=40)  # widthプロパティで大きさを変える
-        accuminputEntry.grid(row=0,column=1, sticky=tk.W)
-        accumoutputEntry = tk.Entry(accumellipseFrame,width=40)  # widthプロパティで大きさを変える
-        accumoutputEntry.grid(row=1, column=1, sticky=tk.W)
-
-        def inputdir_clicked():
-            self.inputpath = tkfd.askdirectory()
-            inputEntry.insert(tk.END, self.inputpath)
 
         def outputdir_clicked():
             self.outputpath = tkfd.askdirectory()
             outputEntry.insert(tk.END, self.outputpath)
 
+        def output_cleardir_clicked():
+            outputEntry.delete(0, tk.END)
+
         def getref_ellipse_clicked():
-            input = Path(inputEntry.get())
+            input = Path(accuminputEntry.get())
             output = Path(outputEntry.get())
             numbeams = int(beamsEntry.get())
             minsize = int(minEntry.get())
@@ -200,11 +203,15 @@ class GUI:
             self.accum_inputpath = tkfd.askdirectory()
             accuminputEntry.insert(tk.END, self.accum_inputpath)
 
+        def accum_input_cleardir_clicked():
+            accuminputEntry.delete(0, tk.END)
 
         def accum_outputdir_clicked():
             self.accum_outputpath = tkfd.askdirectory()
             accumoutputEntry.insert(tk.END, self.accum_outputpath)
 
+        def accum_output_cleardir_clicked():
+            accumoutputEntry.delete(0, tk.END)
 
         def accum_ellipse_clicked():
             ref = Path(outputEntry.get())
@@ -212,21 +219,26 @@ class GUI:
             output = accumoutputEntry.get()
             numbeams = int(beamsEntry.get())
             self.accumulate_intensity.main(ref,input,output,numbeams)
+            ArrangeValue(output).arrange_value()
 
+        self.accum_inputdir = tk.Button(configelipseFrame, text='Select', command=accum_inputdir_clicked)
+        self.accum_inputdir.grid(row=1, column=2, sticky=tk.W)
+        self.accum_input_cleardir = tk.Button(configelipseFrame, text='Clear', command=accum_input_cleardir_clicked)
+        self.accum_input_cleardir.grid(row=1, column=3, sticky=tk.W)
         self.outputdir = tk.Button(configelipseFrame,text='Select', command=outputdir_clicked)
-        self.outputdir.grid(row=1,column=2, sticky=tk.W)
+        self.outputdir.grid(row=2,column=2, sticky=tk.W)
+        self.output_cleardir = tk.Button(configelipseFrame, text='Clear', command=output_cleardir_clicked)
+        self.output_cleardir.grid(row=2, column=3, sticky=tk.W)
 
-        self.inputdir = tk.Button(ellipseparamFrame,text='Select', command=inputdir_clicked)
-        self.inputdir.grid(row=3,column=2, sticky=tk.W)
-        self.getref_ellipse = tk.Button(ellipseparamFrame,text='Get Ellipse', command=getref_ellipse_clicked)
+        self.getref_ellipse = tk.Button(ellipseparamFrame,text='Detect beam shapes', command=getref_ellipse_clicked)
         self.getref_ellipse.grid(row=4,column=2, sticky=tk.W,pady=5)
 
-        self.accum_inputdir = tk.Button(accumellipseFrame,text='Select', command=accum_inputdir_clicked)
-        self.accum_inputdir.grid(row=0,column=2, sticky=tk.W)
         self.accum_outputdir = tk.Button(accumellipseFrame,text='Select', command=accum_outputdir_clicked)
-        self.accum_outputdir.grid(row=1,column=2, sticky=tk.W)
-        self.accum_ellipse = tk.Button(accumellipseFrame,text='Accumulate intensity of ellipse', command=accum_ellipse_clicked)
-        self.accum_ellipse.grid(row=2,column=2, sticky=tk.W,pady=5)
+        self.accum_outputdir.grid(row=0,column=2, sticky=tk.W)
+        self.accum_output_cleardir = tk.Button(accumellipseFrame, text='Clear', command=accum_output_cleardir_clicked)
+        self.accum_output_cleardir.grid(row=0, column=3, sticky=tk.W)
+        self.accum_ellipse = tk.Button(accumellipseFrame,text='Accumulate intensity of beams', command=accum_ellipse_clicked)
+        self.accum_ellipse.grid(row=1,column=3, sticky=tk.W,pady=5)
 
     def dnn_frame(self):
         dnnFrame = tk.LabelFrame(self.tab1, width=600,height=200,bd=2, relief="ridge",
@@ -256,14 +268,19 @@ class GUI:
             rdo = tk.Radiobutton(dnnFrame, value=i, variable=rdo_var, text=rdo_txt[i])
             rdo.place(relx=0.12+0.07*i,rely=0)
 
-
         def trainfolderbutton_clicked():
             trainpath = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')
             trainEntry.insert(tk.END, trainpath)
 
+        def trainfolderbutton_clear_clicked():
+            trainEntry.delete(0, tk.END)
+
         def valfolderbutton_clicked():
             valpath = tkfd.askdirectory(title='検証(val)フォルダを選択してください')
             valEntry.insert(tk.END, valpath)
+
+        def valfolderbutton_clear_clicked():
+            valEntry.delete(0, tk.END)
 
         def status_clicked():
             active = threading.enumerate()
@@ -325,8 +342,12 @@ class GUI:
 
         self.trainfolderbutton = tk.Button(dnnFrame,text='Select', command=trainfolderbutton_clicked)
         self.trainfolderbutton.grid(row=1,column=2)
+        self.trainfolderbutton_clear = tk.Button(dnnFrame, text='Clear', command=trainfolderbutton_clear_clicked)
+        self.trainfolderbutton_clear.grid(row=1, column=3)
         self.valfolderbutton = tk.Button(dnnFrame,text='Select', command=valfolderbutton_clicked)
         self.valfolderbutton.grid(row=2,column=2)
+        self.valfolderbutton_clear = tk.Button(dnnFrame, text='Clear', command=valfolderbutton_clear_clicked)
+        self.valfolderbutton_clear.grid(row=2, column=3)
         self.trainbutton = tk.Button(dnnFrame,text='Train', command=dnn_train_clicked)
         self.trainbutton.grid(row=6,column=2)
         self.statusbutton = tk.Button(dnnFrame,text='Update status', command=status_clicked)

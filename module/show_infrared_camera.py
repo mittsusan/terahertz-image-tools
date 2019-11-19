@@ -59,9 +59,9 @@ class ShowInfraredCamera():
                        cv2.resize(frame, (1024, 1024)))
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), frame)
+                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
                 self.savecount += -1
-                print('saveimage:{}'.format(self.savecount))
+                print('saveimage:{:0>6}'.format(self.savecount))
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
@@ -122,9 +122,9 @@ class ShowInfraredCamera():
 
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), apply_color_map_image)
+                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
                 self.savecount += -1
-                print('saveimage:{}'.format(self.savecount))
+                print('saveimage:{:0>6}'.format(self.savecount))
 
             if cv2.waitKey(1) & 0xff == 110:  # N
                 self.colormap_table_count = self.colormap_table_count + 1
@@ -228,9 +228,9 @@ class ShowInfraredCamera():
                        cv2.resize(frame, (1024, 1024)))
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), frame)
+                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
                 self.savecount += -1
-                print('saveimage:{}'.format(self.savecount))
+                print('saveimage:{:0>6}'.format(self.savecount))
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
@@ -335,9 +335,9 @@ class ShowInfraredCamera():
 
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{}.png'.format(self.savecount), apply_color_map_image)
+                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
                 self.savecount += -1
-                print('saveimage:{}'.format(self.savecount))
+                print('saveimage:{:0>6}'.format(self.savecount))
 
             if cv2.waitKey(1) & 0xff == 110:  # N
                 self.colormap_table_count = self.colormap_table_count + 1
