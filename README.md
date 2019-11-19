@@ -67,6 +67,11 @@ $ python -m pip install matplotlib
 ```
 $ python -m pip install opencv-python
 ```
+`PIL`をインストールする
+
+```
+$ python -m pip install pillow
+```
 
 Spinnaker SDKを[公式ページ](https://www.flir.com/products/spinnaker-sdk/)からダウンロードしてインストールする  
 同梱されている`README.txt`に沿ってインストールを進める
