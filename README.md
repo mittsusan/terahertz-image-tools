@@ -82,7 +82,7 @@ $ python -c "import cv2; print(cv2.__version__)"
 $ python -c "import PySpin"
 ```
 
-以下Pyspinに関して詳細追記
+以下Pyspinに関して詳細追記  
 https://flir.app.boxcn.net/v/SpinnakerSDK/folder/73501875299
 からバージョン選択後ダウンロード。
 (python 3.6.8 だとspinnaker_python-1.27.0.48-cp36-cp36m-win_amd64.zipをダウンロード)
