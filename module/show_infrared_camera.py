@@ -3,10 +3,12 @@ from module.camera_manager import TriggerType
 from module.camera_manager import AcquisitionMode
 from module.camera_manager import AutoExposureMode
 from module.camera_manager import AutoGainMode
+from module.imread_imwrite_japanese import ImreadImwriteJapanese
 import cv2
-#import time
+import time
 import numpy as np
 from PIL import Image
+import pathlib
 
 class ShowInfraredCamera():
     def __init__(self):
@@ -28,6 +30,7 @@ class ShowInfraredCamera():
             ['COLORMAP_WINTER', cv2.COLORMAP_WINTER],
         ]
         self.norm = False
+        self.im_jp = ImreadImwriteJapanese
     def show_beam(self, trigger, gain, exp):
 
         if trigger == "software":
@@ -49,7 +52,7 @@ class ShowInfraredCamera():
 
         while True:
             # 処理前の時刻
-            #t1 = time.time()
+            t1 = time.time()
             if trigger == "software":
                 self.cam_manager.execute_software_trigger()
 
@@ -63,7 +66,8 @@ class ShowInfraredCamera():
             cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(frame, (800, 800)))
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
+                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
+                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
@@ -73,11 +77,11 @@ class ShowInfraredCamera():
                 break
 
             # 処理後の時刻
-            #t2 = time.time()
+            t2 = time.time()
 
             # 経過時間を表示
-            #freq = 1 / (t2 - t1)
-            #print(f"フレームレート：{freq}fps")
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
 
         self.cam_manager.stop_acquisition()
 
@@ -100,12 +104,12 @@ class ShowInfraredCamera():
 
         self.cam_manager.start_acquisition()
 
-        im = Image.open('./colorbar.png')
+        im = Image.open(pathlib.Path('colorbar.png'))
         im.show()
 
         while True:
             # 処理前の時刻
-            #t1 = time.time()
+            t1 = time.time()
             if trigger == "software":
                 self.cam_manager.execute_software_trigger()
 
@@ -131,7 +135,8 @@ class ShowInfraredCamera():
 
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
+                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
+                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
@@ -145,11 +150,11 @@ class ShowInfraredCamera():
                 break
 
             # 処理後の時刻
-            #t2 = time.time()
+            t2 = time.time()
 
             # 経過時間を表示
-            #freq = 1 / (t2 - t1)
-            #print(f"フレームレート：{freq}fps")
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
 
         self.cam_manager.stop_acquisition()
 
@@ -182,7 +187,7 @@ class ShowInfraredCamera():
         font_scale = 6
         while True:
             # 処理前の時刻
-            #t1 = time.time()
+            t1 = time.time()
             if trigger == "software":
                 self.cam_manager.execute_software_trigger()
 
@@ -239,7 +244,8 @@ class ShowInfraredCamera():
                        cv2.resize(frame, (800, 800)))
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
+                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
+                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
@@ -249,11 +255,11 @@ class ShowInfraredCamera():
                 break
 
             # 処理後の時刻
-            #t2 = time.time()
+            t2 = time.time()
 
             # 経過時間を表示
-            #freq = 1 / (t2 - t1)
-            #print(f"フレームレート：{freq}fps")
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
 
         self.cam_manager.stop_acquisition()
         print('Stopped Camera')
@@ -277,7 +283,7 @@ class ShowInfraredCamera():
 
         self.cam_manager.start_acquisition()
 
-        im = Image.open('./colorbar.png')
+        im = Image.open(pathlib.Path('colorbar.png'))
         im.show()
 
         font = cv2.FONT_HERSHEY_PLAIN
@@ -290,7 +296,7 @@ class ShowInfraredCamera():
         font_scale = 6
         while True:
             # 処理前の時刻
-            #t1 = time.time()
+            t1 = time.time()
             if trigger == "software":
                 self.cam_manager.execute_software_trigger()
 
@@ -353,7 +359,8 @@ class ShowInfraredCamera():
 
 
             if self.savecount != 0:
-                cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
+                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
+                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
@@ -367,11 +374,11 @@ class ShowInfraredCamera():
                 break
 
             # 処理後の時刻
-            #t2 = time.time()
+            t2 = time.time()
 
             # 経過時間を表示
-            #freq = 1 / (t2 - t1)
-            #print(f"フレームレート：{freq}fps")
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
 
         self.cam_manager.stop_acquisition()
         print('Stopped Camera')

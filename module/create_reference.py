@@ -1,13 +1,15 @@
 from module.ellipse_detector import Ellipse
 from module.ellipse_detector import EllipseDetector
-
+from module.imread_imwrite_japanese import ImreadImwriteJapanese
 import argparse
 import numpy as np
 from pathlib import Path
-
 import cv2
 
+
 class CreateReference:
+    def __init__(self):
+        self.im_jp = ImreadImwriteJapanese
 
     def main(self,input,output,numbeams,minsize,maxsize,binthresh):
         # 楕円検出器
@@ -17,7 +19,8 @@ class CreateReference:
         for ref_img_path in input.glob("*.png"):
             print("detecting ellipses from {} ...".format(ref_img_path))
             # 画像を読み込む
-            ref_img = cv2.imread(str(ref_img_path), cv2.IMREAD_GRAYSCALE)
+            #ref_img = cv2.imread(str(ref_img_path), cv2.IMREAD_GRAYSCALE)
+            ref_img = self.im_jp.imread(str(ref_img_path), cv2.IMREAD_GRAYSCALE)
             # 楕円を検出
             ellipses = self.detector.detect(ref_img)
 
@@ -68,8 +71,9 @@ class CreateReference:
             output.mkdir(parents=True, exist_ok=True)
             for i, (ellipse, mask) in enumerate(zip(ellipses, masks)):
                 # 楕円マスクを保存
-                cv2.imwrite(str(output / "{:02d}.png".format(i)), mask)
+                #cv2.imwrite(str(output / "{:02d}.png".format(i)), mask)
+                self.im_jp.imwrite(str(output / "{:02d}.png".format(i)), mask)
                 # (中心x, 中心y, 短軸長, 長軸長, 回転角)の順で保存
                 np.savetxt(str(output / "{:02d}.txt".format(i)),
                            np.array([ellipse.c_x, ellipse.c_y, ellipse.minor_ax, ellipse.major_ax, ellipse.angle]),
-                           fmt="%.18f")
+                           fmt="%.18f", encoding='utf-8')

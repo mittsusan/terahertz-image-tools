@@ -99,6 +99,17 @@ class CameraManager:
             raise RuntimeError("unable to set trigger source (enum entry retrieval)")
         node_trigger_source.SetIntValue(node_chosen_source.GetValue())
 
+        trigger_activation_type = "RisingEdge"
+
+        node_trigger_activation = PySpin.CEnumerationPtr(nodemap.GetNode("TriggerActivation"))
+        if not PySpin.IsAvailable(node_trigger_activation) or not PySpin.IsWritable(node_trigger_activation):
+            raise RuntimeError("unable to get trigger activation (node retrieval)")
+
+        node_chosen_activation = node_trigger_activation.GetEntryByName(trigger_activation_type)
+        if not PySpin.IsAvailable(node_chosen_activation) or not PySpin.IsReadable(node_chosen_activation):
+            raise RuntimeError("unable to set trigger activation type (enum entry retrieval)")
+        node_trigger_activation.SetIntValue(node_chosen_activation.GetValue())
+
         # トリガーモードを再開する
         if is_trigger_mode_now:
             self.turn_on_trigger_mode(False)

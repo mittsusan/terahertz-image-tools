@@ -5,6 +5,7 @@ from keras.utils import np_utils
 import glob
 import cv2
 from module.cnn_processing import CNN
+from module.imread_imwrite_japanese import ImreadImwriteJapanese
 
 
 class DNNClasifier:
@@ -17,7 +18,7 @@ class DNNClasifier:
             self.im_size_width = 30
             self.im_size_height = 44
             self.flip = 1  # 1の場合画像を左右反転,0の場合、上下反転、-1の場合上下左右反転、Noneでなし。
-
+        self.im_jp = ImreadImwriteJapanese
     def train(self):
         def load_pic(data_path):
             # ファイルのパスの読み込み
@@ -36,7 +37,8 @@ class DNNClasifier:
                         basename, ext = os.path.splitext(i)
                         if ext == '.jpg' or ext == '.png' or ext == '.jpeg':
                             print('処理予定{}'.format(i))
-                            image = cv2.imread(i,cv2.IMREAD_GRAYSCALE)
+                            #image = cv2.imread(i,cv2.IMREAD_GRAYSCALE)
+                            image = self.im_jp.imread(i,cv2.IMREAD_GRAYSCALE)
                             image = cv2.resize(image, (self.im_size_width, self.im_size_height))  # サイズ変更して圧縮
                             if self.flip == None:
                                 pass

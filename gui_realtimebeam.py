@@ -28,7 +28,7 @@ class GUI:
         self.cameraFrame() #トリガー、ゲイン、露出、保存を決めるフレーム
         self.ellipseFrame()
         self.dnn_frame()
-
+        self.normflag = False
     def cameraFrame(self):
         configFrame = tk.LabelFrame(self.tab1,bd=2,relief="ridge",text="カメラの共通設定")
         configFrame.pack(anchor=tk.W,pady=5)
@@ -50,7 +50,8 @@ class GUI:
         # ラジオボタンの状態
         self.trigger_rdo_var = tk.IntVar()
         # ラジオボタンを動的に作成して配置
-
+        # value=1のラジオボタンにチェックを入れる
+        self.trigger_rdo_var.set(1)
         for i in range(len(self.trigger_rdo_txt)):
             self.trigger_rdo = tk.Radiobutton(configFrame, value=i, variable=self.trigger_rdo_var,
                                               text=self.trigger_rdo_txt[i])
@@ -121,9 +122,16 @@ class GUI:
 
         def norm_clicked():
             try:
-                self.cvv.min_max_flag()
-                print('min-max-normalization')
-
+                if self.normflag == False:
+                    self.cvv.min_max_flag()
+                    print('min-max-normalization')
+                    self.norm.config(text='元に戻す')
+                    self.normflag = True
+                else:
+                    self.cvv.min_max_flag()
+                    print('元に戻しました')
+                    self.norm.config(text='min-max-normalization')
+                    self.normflag = False
             except AttributeError:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
