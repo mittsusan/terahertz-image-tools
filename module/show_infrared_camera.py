@@ -7,8 +7,8 @@ from module.imread_imwrite_japanese import ImreadImwriteJapanese
 import cv2
 import time
 import numpy as np
-from PIL import Image
-import pathlib
+#from PIL import Image
+#import pathlib
 
 class ShowInfraredCamera():
     def __init__(self):
@@ -104,8 +104,8 @@ class ShowInfraredCamera():
 
         self.cam_manager.start_acquisition()
 
-        im = Image.open(pathlib.Path('colorbar.png'))
-        im.show()
+        #im = Image.open(pathlib.Path('colorbar.png'))
+        #im.show()
 
         while True:
             # 処理前の時刻
@@ -283,8 +283,8 @@ class ShowInfraredCamera():
 
         self.cam_manager.start_acquisition()
 
-        im = Image.open(pathlib.Path('colorbar.png'))
-        im.show()
+        #im = Image.open(pathlib.Path('colorbar.png'))
+        #im.show()
 
         font = cv2.FONT_HERSHEY_PLAIN
         fontsize = 8
