@@ -4,7 +4,7 @@
 
 ### 動作確認済みの環境
 
-- Windows 8.1,Windows 10
+- Windows 8.1, Windows 10
 - Python `3.6.8`
 - OpenCV `4.1.0`
 - Spinnaker bindings for Python 3.6 (64bit) `1.23.0.27`
