@@ -4,48 +4,64 @@
 
 ### 動作確認済みの環境
 
-- Windows 8.1
+- Windows 8.1,Windows 10
 - Python `3.6.8`
 - OpenCV `4.1.0`
 - Spinnaker bindings for Python 3.6 (64bit) `1.23.0.27`
+
 
 `pip list`の出力は以下の通り
 
 ```
 $ python -m pip list
-Package          Version
----------------- ---------
-autopep8         1.4.4
-backcall         0.1.0
-colorama         0.4.1
-cycler           0.10.0
-decorator        4.4.0
-entrypoints      0.3
-flake8           3.7.7
-ipython          7.5.0
-ipython-genutils 0.2.0
-jedi             0.14.0
-kiwisolver       1.1.0
-llvmlite         0.29.0
-matplotlib       3.1.0
-mccabe           0.6.1
-numba            0.45.1
-numpy            1.16.4
-opencv-python    4.1.0.25
-parso            0.5.0
-pickleshare      0.7.5
-pip              19.1.1
-prompt-toolkit   2.0.9
-pycodestyle      2.5.0
-pyflakes         2.1.1
-Pygments         2.4.2
-pyparsing        2.4.0
-python-dateutil  2.8.0
-setuptools       40.6.2
-six              1.12.0
-spinnaker-python 1.23.0.27
-traitlets        4.3.2
-wcwidth          0.1.7
+Package              Version
+-------------------- ---------
+absl-py              0.8.1
+astor                0.8.0
+cachetools           3.1.1
+certifi              2019.9.11
+chardet              3.0.4
+cycler               0.10.0
+gast                 0.2.2
+google-auth          1.7.0
+google-auth-oauthlib 0.4.1
+google-pasta         0.1.8
+grpcio               1.25.0
+h5py                 2.10.0
+idna                 2.8
+Keras                2.3.1
+Keras-Applications   1.0.8
+Keras-Preprocessing  1.1.0
+kiwisolver           1.1.0
+Markdown             3.1.1
+matplotlib           3.1.0
+numpy                1.16.4
+oauthlib             3.1.0
+opencv-python        3.4.5.20
+opt-einsum           3.1.0
+Pillow               6.2.1
+pip                  19.1.1
+protobuf             3.10.0
+pyasn1               0.4.7
+pyasn1-modules       0.2.7
+pyparsing            2.4.0
+python-dateutil      2.8.0
+PyYAML               5.1.2
+requests             2.22.0
+requests-oauthlib    1.2.0
+rsa                  4.0
+scipy                1.3.1
+setuptools           41.6.0
+six                  1.12.0
+spinnaker-python     1.23.0.27
+tensorboard          1.15.0
+tensorflow           1.15.0
+tensorflow-estimator 1.15.1
+termcolor            1.1.0
+urllib3              1.25.6
+Werkzeug             0.16.0
+wheel                0.33.6
+wrapt                1.11.2
 ```
 
 ### 環境構築
@@ -67,11 +83,7 @@ $ python -m pip install matplotlib
 ```
 $ python -m pip install opencv-python
 ```
-`PIL`をインストールする
 
-```
-$ python -m pip install pillow
-```
 
 Spinnaker SDKを[公式ページ](https://www.flir.com/products/spinnaker-sdk/)からダウンロードしてインストールする  
 同梱されている`README.txt`に沿ってインストールを進める
@@ -116,12 +128,20 @@ $ python -m pip install keras
 - `accumulate_intensity.py`: 事前に作成した楕円マスクをもとに，楕円マスク内の画素輝度値を積算するサンプルプログラム
 - `acquire_image.py`: カメラから画像を取得するサンプルプログラム
 - `create_reference.py`: リファレンス画像から楕円マスクを作成するサンプルプログラム
+- `gui_realtimebeam.py`: GUIとして全てのプログラムをまとめたもの。リアルタイム識別プログラムも同梱
 
 モジュール
 
 - `module/beem_accumulator.py`: 事前に作成した楕円マスクをもとに，楕円マスク内の画素輝度値を積算するモジュール
 - `module/camera_manager.py`: カメラへのアクセスを行うモジュール
 - `module/ellipse_detector.py`: 楕円検出を行うモジュール
+- `module/accumulate_intensity.py`: ビームの形から強度を積算するモジュール
+- `module/arrange_value.py`: 安定性評価の為、積算値を一つの'stability.txt'に出力するようにしたモジュール
+- `module/cnn_processing.py`: CNNを用いて訓練及びテストをするモジュール
+- `module/dnn.py`: DNNを用いる為のデータの前処理をするモジュール
+- `module/drawbeam_ingui.py`: GUI中に動画を書き込むモジュール（今回はfpsが遅くなるので使用していません。）
+- `module/imread_imwrite_japanese.py`: cv2.imreadとimwriteを日本語が混じっているディレクトリでも読み込めるようにしたもの
+- `module/show_infrared_camera.py`: カメラでリアルタイム映像を取る為のモジュール
 
 テスト用ファイル
 
