@@ -4,7 +4,7 @@ from module.imread_imwrite_japanese import ImreadImwriteJapanese
 import cv2
 import os
 import numpy as np
-from pathlib import Path
+#from pathlib import Path
 
 class AccumulateIntensity:
     def __init__(self):

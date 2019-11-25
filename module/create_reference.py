@@ -60,8 +60,8 @@ class CreateReference:
         # 楕円マスクの可視化
         print("integrating ellipse masks ...")
         masks = self.detector.create_ellipse_masks(ellipses, ref_img.shape)
-        int_mask = self.detector.integrate_ellipse_masks(masks, ellipses)
-        int_mask = cv2.resize(int_mask, None, fx=0.5, fy=0.5)
+        #int_mask = self.detector.integrate_ellipse_masks(masks, ellipses)
+        #int_mask = cv2.resize(int_mask, None, fx=0.5, fy=0.5)
         #cv2.imshow("integrated ellipses", int_mask)
         #cv2.waitKey(0)
 

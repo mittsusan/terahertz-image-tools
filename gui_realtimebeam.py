@@ -13,10 +13,12 @@ from module.arrange_value import ArrangeValue
 
 class GUI:
     def __init__(self):
-        self.cvv = ShowInfraredCamera()
+        self.cvv = None
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
-        self.root=tk.Tk()
+        self.root = tk.Tk()
+        self.iconfile = Path('icon/favicon.ico')
+        self.root.iconbitmap(default=self.iconfile)
         self.nb = ttk.Notebook(width=1000, height=400)
         self.tab1 = tk.Frame(self.nb)
         self.tab2 = tk.Frame(self.nb)
@@ -78,8 +80,8 @@ class GUI:
 
         def button1_clicked():
             try:
-                #self.cvv = None
-                #self.cvv = ShowInfraredCamera()
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
@@ -90,8 +92,8 @@ class GUI:
 
         def showcolor_clicked():
             try:
-                #self.cvv = None
-                #self.cvv = ShowInfraredCamera()
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
@@ -165,11 +167,11 @@ class GUI:
         lbl.grid(row=2, column=0, sticky=tk.W)
 
 
-        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長の最小閾値を選択してください。')
+        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長(pix)の最小閾値を選択してください。この値より小さいビームは検出されません。(全体を2048pix×2048pixとして考える)')
         lbl.grid(row=0, column=0, sticky=tk.W)
-        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長の最大閾値を選択してください。')
+        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長(pix)の最大閾値を選択してください。この値より大きいビームは検出されません。(全体を2048pix×2048pixとして考える)')
         lbl.grid(row=1, column=0, sticky=tk.W)
-        lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。')
+        lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。(0～255の間)')
         lbl.grid(row=2, column=0, sticky=tk.W)
 
 
@@ -198,7 +200,6 @@ class GUI:
 
         accumoutputEntry = tk.Entry(accumellipseFrame,width=80)  # widthプロパティで大きさを変える
         accumoutputEntry.grid(row=0, column=1, sticky=tk.W)
-
 
         def outputdir_clicked():
             self.outputpath = tkfd.askdirectory()
@@ -323,8 +324,8 @@ class GUI:
 
         def dnn_test_clicked():
             try:
-                #self.cvv = ShowInfraredCamera()
-                #self.cvv = None
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 imtype = rdo_txt[rdo_var.get()]
                 if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
@@ -341,8 +342,8 @@ class GUI:
 
         def dnn_test_color_clicked():
             try:
-                #self.cvv = ShowInfraredCamera()
-                #self.cvv = None
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 imtype = rdo_txt[rdo_var.get()]
                 if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
