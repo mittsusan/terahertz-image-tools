@@ -66,7 +66,8 @@ wrapt                1.11.2
 
 ### 環境構築
 
-Python 3.6.8を[公式ページ](https://www.python.org/downloads/)からダウンロードしてインストールする
+Python 3.6.8を[公式ページ](https://www.python.org/downloads/)からダウンロードしてインストールする(web-basedからインストールがおすすめ。また、最初の設定でadd PATHすることを勧める。)
+
 
 `numpy`をインストールする
 
@@ -120,6 +121,8 @@ $ python -m pip install tensorflow==1.15
 ```
 $ python -m pip install keras
 ```
+ダブルクリックのみで実行したい場合は(http://pineplanter.moo.jp/non-it-salaryman/2018/01/01/pyqt-dbclick-start/)
+を参照して下さい。
 
 ## ファイルの説明
 
