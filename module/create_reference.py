@@ -23,7 +23,7 @@ class CreateReference:
             ref_img = self.im_jp.imread(str(ref_img_path), cv2.IMREAD_GRAYSCALE)
             # 楕円を検出
             ellipses = self.detector.detect(ref_img)
-
+            print(len(ellipses))
             # ビーム数をチェック
             if len(ellipses) != numbeams:
                 print("cannot find {} beams from {}".format(numbeams, ref_img_path))

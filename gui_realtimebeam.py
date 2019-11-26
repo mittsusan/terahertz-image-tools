@@ -174,7 +174,7 @@ class GUI:
         lbl.grid(row=0, column=0, sticky=tk.W)
         lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長(pix)の最大閾値を選択してください。この値より大きいビームは検出されません。(全体を2048pix×2048pixとして考える)')
         lbl.grid(row=1, column=0, sticky=tk.W)
-        lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。(0～255の間)')
+        lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，大津の二値化が使われる)を選択してください。(0～255の間) (ビーム強度が弱いと大津の二値化を使わないとビーム検出が上手く出来ません。)')
         lbl.grid(row=2, column=0, sticky=tk.W)
 
 
