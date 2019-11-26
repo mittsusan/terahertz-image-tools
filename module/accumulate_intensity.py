@@ -41,4 +41,3 @@ class AccumulateIntensity:
             print(output_path)
             print(numpyave)
             np.savetxt(output_path, numpyave, delimiter='\t', encoding='utf-8')
-
