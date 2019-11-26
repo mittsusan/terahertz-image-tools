@@ -9,15 +9,18 @@ from module.show_infrared_camera import ShowInfraredCamera
 from module.accumulate_intensity import AccumulateIntensity
 from module.dnn import DNNClasifier
 from module.arrange_value import ArrangeValue
+from module.fwhm import FWHM
 
 
 class GUI:
     def __init__(self):
-        self.cvv = ShowInfraredCamera()
+        self.cvv = None
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
-        self.root=tk.Tk()
-        self.nb = ttk.Notebook(width=1000, height=400)
+        self.root = tk.Tk()
+        self.iconfile = Path('icon/favicon.ico')
+        self.root.iconbitmap(default=self.iconfile)
+        self.nb = ttk.Notebook(width=1050, height=450)
         self.tab1 = tk.Frame(self.nb)
         self.tab2 = tk.Frame(self.nb)
         self.nb.add(self.tab1, text='近赤外カメラ')
@@ -78,8 +81,8 @@ class GUI:
 
         def button1_clicked():
             try:
-                #self.cvv = None
-                #self.cvv = ShowInfraredCamera()
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
@@ -90,8 +93,8 @@ class GUI:
 
         def showcolor_clicked():
             try:
-                #self.cvv = None
-                #self.cvv = ShowInfraredCamera()
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
@@ -146,7 +149,7 @@ class GUI:
         self.showcolor.grid(row=2, column=3)
         self.save = tk.Button(saveFrame,text='保存 (識別中でも使用可)', command=save_clicked)
         self.save.grid(row=2, column=4)
-        self.norm = tk.Button(saveFrame, text='min-max-normalization', command=norm_clicked)
+        self.norm = tk.Button(saveFrame, text='正規化 (5fps程度しか出なくなります)', command=norm_clicked)
         self.norm.grid(row=3, column=4)
 
     def ellipseFrame(self):
@@ -156,6 +159,8 @@ class GUI:
         ellipseparamFrame.pack(anchor=tk.W,pady=5)
         accumellipseFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="ビームの積算値を取得")
         accumellipseFrame.pack(anchor=tk.W,pady=5)
+        fwhmFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="ビームのパラメータを取得(単位mm)")
+        fwhmFrame.pack(anchor=tk.W, pady=5)
 
         lbl = tk.Label(configelipseFrame,text='ビームの本数を選択してください')
         lbl.grid(row=0, column=0, sticky=tk.W)
@@ -165,15 +170,19 @@ class GUI:
         lbl.grid(row=2, column=0, sticky=tk.W)
 
 
-        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長の最小閾値を選択してください。')
+        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長(pix)の最小閾値を選択してください。この値より小さいビームは検出されません。(全体を2048pix×2048pixとして考える)')
         lbl.grid(row=0, column=0, sticky=tk.W)
-        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長の最大閾値を選択してください。')
+        lbl = tk.Label(ellipseparamFrame,text='楕円の短軸長(pix)の最大閾値を選択してください。この値より大きいビームは検出されません。(全体を2048pix×2048pixとして考える)')
         lbl.grid(row=1, column=0, sticky=tk.W)
-        lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，Otsus methodが使われる)を選択してください。')
+        lbl = tk.Label(ellipseparamFrame,text='二値化の閾値 (0の場合，大津の二値化が使われる)を選択してください。(0～255の間) (ビーム強度が弱いと大津の二値化を使わないとビーム検出が上手く出来ません。)')
         lbl.grid(row=2, column=0, sticky=tk.W)
 
 
         lbl = tk.Label(accumellipseFrame, text='積算データ(txt)を保存するディレクトリを選択してください。')
+        lbl.grid(row=0, column=0, sticky=tk.W)
+
+
+        lbl = tk.Label(fwhmFrame, text='ビームの短軸、長軸、短軸FWHM、長軸FWHMを保存するディレクトリを選択してください。')
         lbl.grid(row=0, column=0, sticky=tk.W)
 
         # テキストボックス
@@ -181,8 +190,10 @@ class GUI:
         beamsEntry.insert(tk.END, u'2')  # 最初から文字を入れておく
         beamsEntry.grid(row=0, column=1, sticky=tk.W)
         accuminputEntry = tk.Entry(configelipseFrame, width=80)  # widthプロパティで大きさを変える
+        #accuminputEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/りえっくす/img')
         accuminputEntry.grid(row=1, column=1, sticky=tk.W)
         outputEntry = tk.Entry(configelipseFrame, width=80)  # widthプロパティで大きさを変える
+        #outputEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/りえっくす/beamform')
         outputEntry.grid(row=2, column=1, sticky=tk.W)
 
 
@@ -190,7 +201,7 @@ class GUI:
         minEntry.insert(tk.END, u'100')  # 最初から文字を入れておく
         minEntry.grid(row=0, column=1, sticky=tk.W)
         maxEntry = tk.Entry(ellipseparamFrame, width=10)  # widthプロパティで大きさを変える
-        maxEntry.insert(tk.END, u'10000')  # 最初から文字を入れておく
+        maxEntry.insert(tk.END, u'2000')  # 最初から文字を入れておく
         maxEntry.grid(row=1, column=1, sticky=tk.W)
         threshEntry = tk.Entry(ellipseparamFrame, width=10)  # widthプロパティで大きさを変える
         threshEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
@@ -199,6 +210,9 @@ class GUI:
         accumoutputEntry = tk.Entry(accumellipseFrame,width=80)  # widthプロパティで大きさを変える
         accumoutputEntry.grid(row=0, column=1, sticky=tk.W)
 
+        fwhmoutputEntry = tk.Entry(fwhmFrame, width=80)  # widthプロパティで大きさを変える
+        #fwhmoutputEntry.insert(tk.END, u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/りえっくす/fwhm')
+        fwhmoutputEntry.grid(row=0, column=1, sticky=tk.W)
 
         def outputdir_clicked():
             self.outputpath = tkfd.askdirectory()
@@ -238,6 +252,19 @@ class GUI:
             self.accumulate_intensity.main(ref,input,output,numbeams)
             ArrangeValue(output).arrange_value()
 
+        def fwhm_outputdir_clicked():
+            self.fwhm_outputpath = tkfd.askdirectory()
+            fwhmoutputEntry.insert(tk.END, self.fwhm_outputpath)
+
+        def fwhm_output_cleardir_clicked():
+            fwhmoutputEntry.delete(0, tk.END)
+
+        def fwhm_ellipse_clicked():
+            ref = Path(outputEntry.get())
+            input = Path(accuminputEntry.get())
+            output = fwhmoutputEntry.get()
+            FWHM().fwhm(ref, input, output)
+
         self.accum_inputdir = tk.Button(configelipseFrame, text='Select', command=accum_inputdir_clicked)
         self.accum_inputdir.grid(row=1, column=2, sticky=tk.W)
         self.accum_input_cleardir = tk.Button(configelipseFrame, text='Clear', command=accum_input_cleardir_clicked)
@@ -257,6 +284,14 @@ class GUI:
         self.accum_ellipse = tk.Button(accumellipseFrame,text='Accumulate intensity of beams', command=accum_ellipse_clicked)
         self.accum_ellipse.grid(row=1,column=3, sticky=tk.W,pady=5)
 
+        self.fwhm_outputdir = tk.Button(fwhmFrame, text='Select', command=fwhm_outputdir_clicked)
+        self.fwhm_outputdir.grid(row=0, column=2, sticky=tk.W)
+        self.fwhm_output_cleardir = tk.Button(fwhmFrame, text='Clear', command=fwhm_output_cleardir_clicked)
+        self.fwhm_output_cleardir.grid(row=0, column=3, sticky=tk.W)
+        self.fwhm_ellipse = tk.Button(fwhmFrame, text='Get short/long axis and Detect FWHM',
+                                       command=fwhm_ellipse_clicked)
+        self.fwhm_ellipse.grid(row=1, column=1, sticky=tk.W, pady=5)
+
     def dnn_frame(self):
         dnnFrame = tk.LabelFrame(self.tab1, width=600,height=200,bd=2, relief="ridge",
                                           text="Deep Learning (Supervised Learning)")
@@ -271,7 +306,7 @@ class GUI:
 
         # テキストボックス
         trainEntry = tk.Entry(dnnFrame,width=80)  # widthプロパティで大きさを変える
-        trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
+        #trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
         trainEntry.grid(row=1,column=1,sticky=tk.W)
         valEntry = tk.Entry(dnnFrame,width=80)  # widthプロパティで大きさを変える
         valEntry.grid(row=2,column=1,sticky=tk.W)
@@ -323,8 +358,8 @@ class GUI:
 
         def dnn_test_clicked():
             try:
-                #self.cvv = ShowInfraredCamera()
-                #self.cvv = None
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 imtype = rdo_txt[rdo_var.get()]
                 if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
@@ -341,8 +376,8 @@ class GUI:
 
         def dnn_test_color_clicked():
             try:
-                #self.cvv = ShowInfraredCamera()
-                #self.cvv = None
+                self.cvv = None
+                self.cvv = ShowInfraredCamera()
                 imtype = rdo_txt[rdo_var.get()]
                 if imtype == 'image':
                     trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]

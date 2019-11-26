@@ -5,6 +5,13 @@ from pathlib import Path
 
 import cv2
 
+class Rectangle:
+    def __init__(self, rectangle):
+        # rectangle = (左上の位置x, y 横のサイズw,縦のサイズh)
+        self.x = rectangle[0]
+        self.y = rectangle[1]
+        self.width = rectangle[2]
+        self.height = rectangle[3]
 
 class Ellipse:
     def __init__(self, ellipse):
@@ -72,6 +79,22 @@ class EllipseDetector:
 
         return ellipses
 
+    def detect_rectangle(self, img):
+        # 二値化
+        bin_img = self.__binarize(img)
+
+        # 輪郭を検出
+        contours = self.__detect_contours(bin_img)
+        if len(contours) < 1:
+            return None, None
+
+        rectangles = self.__detect_rectangles(contours)
+
+        # 外接矩形の中心のx座標の小さい順にソート
+        rectangles = sorted(rectangles, key=lambda x: x.x)
+
+        return rectangles
+
     def __binarize(self, img):
         if 2 < len(img.shape):
             bin_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -102,6 +125,19 @@ class EllipseDetector:
                 continue
             ellipses.append(ellipse)
         return ellipses
+
+    def __detect_rectangles(self, contours):
+        rectangles = []
+        for i, contour in enumerate(contours):
+            # 長方形検出には最低4点以上必要
+            if len(contour) < 4:
+                continue
+            rentangle = Rectangle(cv2.boundingRect(contour))
+            # 短軸の長さで判定
+            if rentangle.width < self.min_size or self.max_size < rentangle.width:
+                continue
+            rectangles.append(rentangle)
+        return rectangles
 
     @staticmethod
     def create_ellipse_masks(ellipses, shape):

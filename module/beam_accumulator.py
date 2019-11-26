@@ -27,7 +27,15 @@ class BeamAccumulator:
     def calc_averages(self, img):
         averages = []
         for ellipse_mask in self.ellipse_masks:
-            average = img[ellipse_mask.nonzero]
+            average = img[ellipse_mask.nonzero] #一列のリスト
+            average = average.mean()
+            averages.append((ellipse_mask.beam_name, average))
+        return averages
+
+    def fwhm(self, img):
+        averages = []
+        for ellipse_mask in self.ellipse_masks:
+            average = img[ellipse_mask.nonzero]  # 一列のリスト
             average = average.mean()
             averages.append((ellipse_mask.beam_name, average))
         return averages
