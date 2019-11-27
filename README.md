@@ -253,7 +253,7 @@ saving ellipse information to ref ...
 ```
 $ python accumulate_intensity.py ref sample\Si_0_05mm --num-beams 3
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000000.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000000.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -262,7 +262,7 @@ beam name    average
 02           51.359641035097425
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000001.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000001.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -271,7 +271,7 @@ beam name    average
 02           51.67668572131047
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000002.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000002.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -280,7 +280,7 @@ beam name    average
 02           51.8862868031225
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000003.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000003.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -289,7 +289,7 @@ beam name    average
 02           51.28047206343352
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000004.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000004.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -298,7 +298,7 @@ beam name    average
 02           52.03362222632
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000005.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000005.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -307,7 +307,7 @@ beam name    average
 02           51.778843198721496
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000006.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000006.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -316,7 +316,7 @@ beam name    average
 02           50.948306595365416
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000007.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000007.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -325,7 +325,7 @@ beam name    average
 02           53.07806257299158
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000008.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000008.png
 ------------------------------
 beam name    average
 ------------------------------
@@ -334,7 +334,7 @@ beam name    average
 02           51.74356137439302
 ------------------------------
 
-image: C:\Users\sumikura\Programs\terahertz-image-tools\sample\Si_0_05mm\000009.png
+image: C:\Users\Programs\terahertz-image-tools\sample\Si_0_05mm\000009.png
 ------------------------------
 beam name    average
 ------------------------------
