@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 import cv2
-
+import time
 
 class CreateReference:
     def __init__(self):
@@ -23,7 +23,6 @@ class CreateReference:
             ref_img = self.im_jp.imread(str(ref_img_path), cv2.IMREAD_GRAYSCALE)
             # 楕円を検出
             ellipses = self.detector.detect(ref_img)
-            print(len(ellipses))
             # ビーム数をチェック
             if len(ellipses) != numbeams:
                 print("cannot find {} beams from {}".format(numbeams, ref_img_path))
@@ -77,3 +76,10 @@ class CreateReference:
                 np.savetxt(str(output / "{:02d}.txt".format(i)),
                            np.array([ellipse.c_x, ellipse.c_y, ellipse.minor_ax, ellipse.major_ax, ellipse.angle]),
                            fmt="%.18f", encoding='utf-8')
+
+    def realtime_create_reference(self, frame, numbeams, minsize, maxsize, binthresh):
+        # 楕円検出器
+        self.detector = EllipseDetector(minsize, maxsize, binthresh)
+        # 楕円を検出
+        ellipses = self.detector.detect(frame)
+        return ellipses

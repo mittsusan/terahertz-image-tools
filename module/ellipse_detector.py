@@ -2,7 +2,7 @@
 import argparse
 import numpy as np
 from pathlib import Path
-
+#import time
 import cv2
 
 class Rectangle:
@@ -67,16 +67,18 @@ class EllipseDetector:
     def detect(self, img):
         # 二値化
         bin_img = self.__binarize(img)
-
+        #t2 = time.time()
         # 楕円を検出
         contours = self.__detect_contours(bin_img)
+        #t3 = time.time()
+        #print(t3 - t2)
         if len(contours) < 1:
             return None, None
         ellipses = self.__detect_ellipses(contours)
-
+        #t4 = time.time()
+        #print(t4-t3)
         # 楕円中心のx座標の小さい順にソート
         ellipses = sorted(ellipses, key=lambda x: x.c_x)
-
         return ellipses
 
     def detect_rectangle(self, img):
@@ -115,11 +117,13 @@ class EllipseDetector:
 
     def __detect_ellipses(self, contours):
         ellipses = []
+
         for i, contour in enumerate(contours):
             # 楕円検出には最低5点以上必要
             if len(contour) < 5:
                 continue
             ellipse = Ellipse(cv2.fitEllipse(contour))
+
             # 短軸の長さで判定
             if ellipse.minor_ax < self.min_size or self.max_size < ellipse.minor_ax:
                 continue
