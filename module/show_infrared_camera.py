@@ -4,6 +4,8 @@ from module.camera_manager import AcquisitionMode
 from module.camera_manager import AutoExposureMode
 from module.camera_manager import AutoGainMode
 from module.imread_imwrite_japanese import ImreadImwriteJapanese
+from module.create_reference import CreateReference
+from module.fwhm import FWHM
 import cv2
 import time
 import numpy as np
@@ -15,12 +17,12 @@ class ShowInfraredCamera():
         self.savecount = 0
         self.colormap_table_count = 0
         self.colormap_table = [
+            ['COLORMAP_JET', cv2.COLORMAP_JET],
             ['COLORMAP_AUTUMN', cv2.COLORMAP_AUTUMN],
             ['COLORMAP_BONE', cv2.COLORMAP_BONE],
             ['COLORMAP_COOL', cv2.COLORMAP_COOL],
             ['COLORMAP_HOT', cv2.COLORMAP_HOT],
             ['COLORMAP_HSV', cv2.COLORMAP_HSV],
-            ['COLORMAP_JET', cv2.COLORMAP_JET],
             ['COLORMAP_OCEAN', cv2.COLORMAP_OCEAN],
             ['COLORMAP_PINK', cv2.COLORMAP_PINK],
             ['COLORMAP_RAINBOW', cv2.COLORMAP_RAINBOW],
@@ -29,6 +31,7 @@ class ShowInfraredCamera():
             ['COLORMAP_WINTER', cv2.COLORMAP_WINTER],
         ]
         self.norm = False
+        self.detectflag = 0
         self.im_jp = ImreadImwriteJapanese
     def show_beam(self, trigger, gain, exp):
 
@@ -61,6 +64,74 @@ class ShowInfraredCamera():
 
             if self.norm == True:
                 frame = self.min_max_normalization(frame)
+
+            cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(frame, (800, 800)))
+
+            if self.savecount != 0:
+                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
+                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
+                self.savecount += -1
+                print('saveimage:{:0>6}'.format(self.savecount))
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cv2.destroyAllWindows()
+                print('Complete Cancel')
+                break
+
+            # 処理後の時刻
+            t2 = time.time()
+
+            # 経過時間を表示
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
+
+        self.cam_manager.stop_acquisition()
+
+    def beam_profiler(self, trigger, gain, exp):
+
+        if trigger == "software":
+            self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
+        elif trigger == "hardware":
+            self.cam_manager.choose_trigger_type(TriggerType.HARDWARE)
+
+        self.cam_manager.turn_on_trigger_mode()
+
+        self.cam_manager.choose_acquisition_mode(AcquisitionMode.CONTINUOUS)
+
+        self.cam_manager.choose_auto_exposure_mode(AutoExposureMode.OFF)
+        self.cam_manager.set_exposure_time(exp)
+
+        self.cam_manager.choose_auto_gain_mode(AutoGainMode.OFF)
+        self.cam_manager.set_gain(gain)
+
+        self.cam_manager.start_acquisition()
+
+        self.create_reference = CreateReference()
+        self.fwhm = FWHM()
+
+        while True:
+            # 処理前の時刻
+            t1 = time.time()
+            if trigger == "software":
+                self.cam_manager.execute_software_trigger()
+
+            frame = self.cam_manager.get_next_image()
+            if frame is None:
+                continue
+
+            if self.norm == True:
+                frame = self.min_max_normalization(frame)
+
+            if self.detectflag == 1:
+                ellipses = self.create_reference.realtime_create_reference(frame, self.numbeams, self.minsize, self.maxsize, self.binthresh)
+                if len(ellipses) == self.numbeams:
+                    frame = self.fwhm.realtime_fwhm(frame, ellipses)
+                    self.detectflag = 2
+                else:
+                    print('ビームがうまく検出されませんでした。設定を見返して下さい。')
+                    self.detectflag = 0
+            elif self.detectflag == 2:
+                frame = self.fwhm.realtime_fwhm(frame, ellipses)
 
             cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(frame, (800, 800)))
 
@@ -123,9 +194,7 @@ class ShowInfraredCamera():
 
             cv2.putText(apply_color_map_image,
                         self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
-                        (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
-
-
+                        (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
 
             cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(apply_color_map_image, (800, 800)))
 
@@ -133,6 +202,89 @@ class ShowInfraredCamera():
 
             if self.savecount != 0:
                 #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
+                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
+                self.savecount += -1
+                print('saveimage:{:0>6}'.format(self.savecount))
+
+            k = cv2.waitKey(1) & 0xff
+            if k == ord('n'):  # N
+                self.colormap_table_count = self.colormap_table_count + 1
+
+            elif k == ord('q'):
+                cv2.destroyAllWindows()
+                print('Complete Cancel')
+                break
+
+            # 処理後の時刻
+            t2 = time.time()
+
+            # 経過時間を表示
+            freq = 1 / (t2 - t1)
+            print(f"フレームレート：{freq}fps")
+
+        self.cam_manager.stop_acquisition()
+
+    def beam_profiler_color(self, trigger, gain, exp):
+
+        if trigger == "software":
+            self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
+        elif trigger == "hardware":
+            self.cam_manager.choose_trigger_type(TriggerType.HARDWARE)
+
+        self.cam_manager.turn_on_trigger_mode()
+
+        self.cam_manager.choose_acquisition_mode(AcquisitionMode.CONTINUOUS)
+
+        self.cam_manager.choose_auto_exposure_mode(AutoExposureMode.OFF)
+        self.cam_manager.set_exposure_time(exp)
+
+        self.cam_manager.choose_auto_gain_mode(AutoGainMode.OFF)
+        self.cam_manager.set_gain(gain)
+
+        self.cam_manager.start_acquisition()
+
+        self.create_reference = CreateReference()
+        self.fwhm = FWHM()
+
+        while True:
+            # 処理前の時刻
+            t1 = time.time()
+            if trigger == "software":
+                self.cam_manager.execute_software_trigger()
+
+            frame = self.cam_manager.get_next_image()
+            if frame is None:
+                continue
+
+            if self.norm == True:
+                frame = self.min_max_normalization(frame)
+            # 疑似カラーを付与
+            apply_color_map_image = cv2.applyColorMap(frame, self.colormap_table[
+                self.colormap_table_count % len(self.colormap_table)][1])
+
+            if self.detectflag == 1:
+                ellipses = self.create_reference.realtime_create_reference(frame, self.numbeams, self.minsize,
+                                                                           self.maxsize, self.binthresh)
+                if len(ellipses) == self.numbeams:
+                    apply_color_map_image = self.fwhm.realtime_fwhm(apply_color_map_image, ellipses)
+                    self.detectflag = 2
+                else:
+                    print('ビームがうまく検出されませんでした。設定を見返して下さい。')
+                    self.detectflag = 0
+            elif self.detectflag == 2:
+                apply_color_map_image = self.fwhm.realtime_fwhm(apply_color_map_image, ellipses)
+
+
+
+            cv2.putText(apply_color_map_image,
+                        self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
+                        (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+
+            cv2.imshow("Please push Q button when you want to close the window.",
+                       cv2.resize(apply_color_map_image, (800, 800)))
+
+            if self.savecount != 0:
+                # cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
                 self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
@@ -396,6 +548,13 @@ class ShowInfraredCamera():
             self.norm = True
         else:
             self.norm = False
+
+    def detect_ellipse(self, numbeams, minsize, maxsize, binthresh):
+        self.numbeams = numbeams
+        self.minsize = minsize
+        self.maxsize = maxsize
+        self.binthresh = binthresh
+        self.detectflag = 1
 
 
 
