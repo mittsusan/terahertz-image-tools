@@ -121,17 +121,17 @@ $ python -m pip install tensorflow==1.15
 ```
 $ python -m pip install keras
 ```
-ダブルクリックのみで実行したい場合は(http://pineplanter.moo.jp/non-it-salaryman/2018/01/01/pyqt-dbclick-start/)
-を参照して下さい。
+
 
 ## ファイルの説明
 
 サンプルプログラム
 
+- `gui_realtimebeam.py`: GUIとして全てのプログラムをまとめたもの。リアルタイム識別プログラムも同梱
 - `accumulate_intensity.py`: 事前に作成した楕円マスクをもとに，楕円マスク内の画素輝度値を積算するサンプルプログラム
 - `acquire_image.py`: カメラから画像を取得するサンプルプログラム
 - `create_reference.py`: リファレンス画像から楕円マスクを作成するサンプルプログラム
-- `gui_realtimebeam.py`: GUIとして全てのプログラムをまとめたもの。リアルタイム識別プログラムも同梱
+
 
 モジュール
 
@@ -154,6 +154,15 @@ $ python -m pip install keras
 - `sample/Si_0_20mm`: 0.20mmのSi基板を挿入して撮影したビーム画像 x 10
 
 ## 使い方
+### `gui_realtimebeam.py`
+以下のように実行する
+
+```
+$ python gui_realtimebeam.py
+```
+
+pythonファイルをダブルクリックのみで実行したい場合は(http://pineplanter.moo.jp/non-it-salaryman/2018/01/01/pyqt-dbclick-start/)
+を参照して下さい。
 
 ### `acquire_image.py`
 
