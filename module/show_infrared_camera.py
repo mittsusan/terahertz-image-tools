@@ -9,6 +9,7 @@ from module.fwhm import FWHM
 import cv2
 import time
 import numpy as np
+from datetime import datetime as dt
 
 
 class ShowInfraredCamera():
@@ -32,7 +33,9 @@ class ShowInfraredCamera():
         ]
         self.norm = False
         self.detectflag = 0
+        self.video_saveflag = False
         self.im_jp = ImreadImwriteJapanese
+
     def show_beam(self, trigger, gain, exp):
 
         if trigger == "software":
@@ -73,7 +76,15 @@ class ShowInfraredCamera():
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if self.video_saveflag == True:
+                self.out.write(cv2.resize(frame,(self.width, self.height)))
+
+            k = cv2.waitKey(1) & 0xFF
+            if k == ord('q'):
+                if self.video_saveflag == True:
+                    self.out.release()
+                    self.video_saveflag = False
+                    print('録画終了')
                 cv2.destroyAllWindows()
                 print('Complete Cancel')
                 break
@@ -82,8 +93,11 @@ class ShowInfraredCamera():
             t2 = time.time()
 
             # 経過時間を表示
-            freq = 1 / (t2 - t1)
-            print(f"フレームレート：{freq}fps")
+            try:
+                freq = 1 / (t2 - t1)
+                print(f"フレームレート：{freq}fps")
+            except ZeroDivisionError:
+                pass
 
         self.cam_manager.stop_acquisition()
 
@@ -141,7 +155,15 @@ class ShowInfraredCamera():
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if self.video_saveflag == True:
+                self.out.write(cv2.resize(frame, (self.width, self.height)))
+
+            k = cv2.waitKey(1) & 0xFF
+            if k == ord('q'):
+                if self.video_saveflag == True:
+                    self.out.release()
+                    self.video_saveflag = False
+                    print('録画終了')
                 cv2.destroyAllWindows()
                 print('Complete Cancel')
                 break
@@ -149,9 +171,11 @@ class ShowInfraredCamera():
             # 処理後の時刻
             t2 = time.time()
 
-            # 経過時間を表示
-            freq = 1 / (t2 - t1)
-            print(f"フレームレート：{freq}fps")
+            try:
+                freq = 1 / (t2 - t1)
+                print(f"フレームレート：{freq}fps")
+            except ZeroDivisionError:
+                pass
 
         self.cam_manager.stop_acquisition()
 
@@ -191,7 +215,6 @@ class ShowInfraredCamera():
 
             apply_color_map_image = cv2.applyColorMap(frame, self.colormap_table[self.colormap_table_count % len(self.colormap_table)][1])
 
-
             cv2.putText(apply_color_map_image,
                         self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
                         (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
@@ -206,21 +229,33 @@ class ShowInfraredCamera():
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
-            k = cv2.waitKey(1) & 0xff
-            if k == ord('n'):  # N
-                self.colormap_table_count = self.colormap_table_count + 1
+            if self.video_saveflag == True:
+                self.out.write(cv2.resize(apply_color_map_image, (self.width, self.height)))
 
-            elif k == ord('q'):
+            k = cv2.waitKey(1) & 0xFF
+            if k == ord('q'):
+                if self.video_saveflag == True:
+                    self.out.release()
+                    self.video_saveflag = False
+                    print('録画終了')
                 cv2.destroyAllWindows()
                 print('Complete Cancel')
                 break
+
+            elif k == ord('n'):  # N
+                self.colormap_table_count = self.colormap_table_count + 1
+
+
 
             # 処理後の時刻
             t2 = time.time()
 
             # 経過時間を表示
-            freq = 1 / (t2 - t1)
-            print(f"フレームレート：{freq}fps")
+            try:
+                freq = 1 / (t2 - t1)
+                print(f"フレームレート：{freq}fps")
+            except ZeroDivisionError:
+                pass
 
         self.cam_manager.stop_acquisition()
 
@@ -289,15 +324,21 @@ class ShowInfraredCamera():
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
-            k = cv2.waitKey(1) & 0xff
-            if k == ord('n'):  # N
-                self.colormap_table_count = self.colormap_table_count + 1
+            if self.video_saveflag == True:
+                self.out.write(cv2.resize(apply_color_map_image, (self.width, self.height)))
 
-            elif k == ord('q'):
+            k = cv2.waitKey(1) & 0xFF
+            if k == ord('q'):
+                if self.video_saveflag == True:
+                    self.out.release()
+                    self.video_saveflag = False
+                    print('録画終了')
                 cv2.destroyAllWindows()
                 print('Complete Cancel')
                 break
 
+            elif k == ord('n'):  # N
+                self.colormap_table_count = self.colormap_table_count + 1
             # 処理後の時刻
             t2 = time.time()
 
@@ -379,15 +420,9 @@ class ShowInfraredCamera():
                 cv2.putText(frame, pretext, (samplename_position_x + x_move, samplename_position_y), font, fontsize,
                             (255, 255, 255), font_scale, cv2.LINE_AA)
 
-
-                if pre[y] > 0.9:  # 確率が90%を超える時
-                    cv2.putText(frame, '{}%'.format(round(pre[y] * 100)),
-                                (probability_position_x + x_move, probability_position_y), font, fontsize,
-                                (0, 0, 255), font_scale, cv2.LINE_AA)
-                else:
-                    cv2.putText(frame, '{}%'.format(round(pre[y] * 100)),
-                                (probability_position_x + x_move, probability_position_y), font, fontsize,
-                                (255, 255, 255), font_scale, cv2.LINE_AA)
+                cv2.putText(frame, '{}%'.format(round(pre[y] * 100)),
+                            (probability_position_x + x_move, probability_position_y), font, fontsize,
+                            (255, 255, 255), font_scale, cv2.LINE_AA)
 
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(frame, (800, 800)))
@@ -398,7 +433,15 @@ class ShowInfraredCamera():
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if self.video_saveflag == True:
+                self.out.write(cv2.resize(frame, (self.width, self.height)))
+
+            k = cv2.waitKey(1) & 0xFF
+            if k == ord('q'):
+                if self.video_saveflag == True:
+                    self.out.release()
+                    self.video_saveflag = False
+                    print('録画終了')
                 cv2.destroyAllWindows()
                 print('Complete Cancel')
                 break
@@ -407,8 +450,11 @@ class ShowInfraredCamera():
             t2 = time.time()
 
             # 経過時間を表示
-            freq = 1 / (t2 - t1)
-            print(f"フレームレート：{freq}fps")
+            try:
+                freq = 1 / (t2 - t1)
+                print(f"フレームレート：{freq}fps")
+            except ZeroDivisionError:
+                pass
 
         self.cam_manager.stop_acquisition()
         print('Stopped Camera')
@@ -511,21 +557,31 @@ class ShowInfraredCamera():
                 self.savecount += -1
                 print('saveimage:{:0>6}'.format(self.savecount))
 
-            k = cv2.waitKey(1) & 0xff
-            if k == ord('n'):  # N
-                self.colormap_table_count = self.colormap_table_count + 1
+            if self.video_saveflag == True:
+                self.out.write(cv2.resize(apply_color_map_image, (self.width, self.height)))
 
-            elif k == ord('q'):
+            k = cv2.waitKey(1) & 0xFF
+            if k == ord('q'):
+                if self.video_saveflag == True:
+                    self.out.release()
+                    self.video_saveflag = False
+                    print('録画終了')
                 cv2.destroyAllWindows()
                 print('Complete Cancel')
                 break
+
+            elif k == ord('n'):  # N
+                self.colormap_table_count = self.colormap_table_count + 1
 
             # 処理後の時刻
             t2 = time.time()
 
             # 経過時間を表示
-            freq = 1 / (t2 - t1)
-            print(f"フレームレート：{freq}fps")
+            try:
+                freq = 1 / (t2 - t1)
+                print(f"フレームレート：{freq}fps")
+            except ZeroDivisionError:
+                pass
 
         self.cam_manager.stop_acquisition()
         print('Stopped Camera')
@@ -533,6 +589,24 @@ class ShowInfraredCamera():
     def save(self,savecount, savepath):
         self.savecount = savecount
         self.savepath = savepath
+
+    def video_save(self, savepath, fps , height, width, color):
+        self.video_savepath = savepath
+        self.fps = fps
+        self.height = height
+        self.width = width
+        tstr = dt.now().strftime('%Y_%m_%d_%H_%M_%S')
+        self.result = self.video_savepath + '/{}.mp4'.format(tstr)
+        self.fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out = cv2.VideoWriter(self.result, self.fourcc, self.fps, (self.width, self.height), isColor=color)
+        self.video_saveflag = True
+        print('録画開始')
+
+    def video_finish(self):
+        self.out.release()
+        self.video_saveflag = False
+        print('録画終了')
 
     def min_max_normalization(self,frame):
         frame = frame.astype(int)

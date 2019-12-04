@@ -20,7 +20,7 @@ class GUI:
         self.root = tk.Tk()
         self.iconfile = Path('icon/favicon.ico')
         self.root.iconbitmap(default=self.iconfile)
-        self.nb = ttk.Notebook(width=1040, height=420)
+        self.nb = ttk.Notebook(width=1040, height=530)
         self.tab1 = tk.Frame(self.nb)
         self.tab2 = tk.Frame(self.nb)
         self.nb.add(self.tab1, text='近赤外カメラ (リアルタイム)')
@@ -51,6 +51,14 @@ class GUI:
         lbl.grid(row=0, column=0)
         lbl = tk.Label(saveFrame,text='保存数を選択してください。')
         lbl.grid(row=1, column=0)
+        lbl = tk.Label(saveFrame, text='～～～～録画設定～～～～')
+        lbl.grid(row=2, column=0)
+        lbl = tk.Label(saveFrame, text='フレームレートを入力してください。 (fps=Hz)')
+        lbl.grid(row=3, column=0)
+        lbl = tk.Label(saveFrame, text='高さを入力してください。 (pix)')
+        lbl.grid(row=4, column=0)
+        lbl = tk.Label(saveFrame, text='幅を入力してください。 (pix)')
+        lbl.grid(row=5, column=0)
 
         lbl = tk.Label(profilerFrame, text='ビームの本数を選択してください')
         lbl.grid(row=0, column=0, sticky=tk.W)
@@ -92,6 +100,15 @@ class GUI:
         numEntry = tk.Entry(saveFrame,width=20)  # widthプロパティで大きさを変える
         numEntry.insert(tk.END, u'10')  # 最初から文字を入れておく
         numEntry.grid(row=1, column=1, sticky=tk.W)
+        fpsEntry = tk.Entry(saveFrame, width=20)  # widthプロパティで大きさを変える
+        fpsEntry.insert(tk.END, u'10')  # 最初から文字を入れておく
+        fpsEntry.grid(row=3, column=1, sticky=tk.W)
+        heightEntry = tk.Entry(saveFrame, width=20)  # widthプロパティで大きさを変える
+        heightEntry.insert(tk.END, u'2048')  # 最初から文字を入れておく
+        heightEntry.grid(row=4, column=1, sticky=tk.W)
+        widthEntry = tk.Entry(saveFrame, width=20)  # widthプロパティで大きさを変える
+        widthEntry.insert(tk.END, u'2048')  # 最初から文字を入れておく
+        widthEntry.grid(row=5, column=1, sticky=tk.W)
 
         beamsEntry = tk.Entry(profilerFrame, width=10)  # widthプロパティで大きさを変える
         beamsEntry.insert(tk.END, u'1')  # 最初から文字を入れておく
@@ -152,6 +169,38 @@ class GUI:
             except AttributeError:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
+        def video_finish_clicked():
+            self.cvv.video_finish()
+            self.video_save.config(text='録画', command=video_save_clicked)
+
+        def color_video_finish_clicked():
+            self.cvv.video_finish()
+            self.video_save.config(text='録画(カラー)', command=color_video_save_clicked)
+
+        def video_save_clicked():
+            try:
+                if len(saveEntry.get()) == 0:
+                    messagebox.showerror('patherror', '保存先フォルダが選択されていません。')
+
+                else:
+                    self.cvv.video_save(saveEntry.get(), float(fpsEntry.get()), int(heightEntry.get()),
+                                        int(widthEntry.get()), False)
+                    self.video_save.config(text='終了', command=video_finish_clicked)
+            except AttributeError:
+                messagebox.showerror('starterror', 'カメラが起動していません。')
+
+        def color_video_save_clicked():
+            try:
+                if len(saveEntry.get()) == 0:
+                    messagebox.showerror('patherror', '保存先フォルダが選択されていません。')
+
+                else:
+                    self.cvv.video_save(saveEntry.get(), float(fpsEntry.get()), int(heightEntry.get()),
+                                        int(widthEntry.get()), True)
+                    self.video_save.config(text='終了', command=color_video_finish_clicked)
+            except AttributeError:
+                messagebox.showerror('starterror', 'カメラが起動していません。')
+
         def norm_clicked():
             try:
                 if self.normflag == False:
@@ -203,28 +252,36 @@ class GUI:
             except AttributeError:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
+        self.profiler_button = tk.Button(configFrame, text='表示', command=profiler_button_clicked)
+        self.profiler_button.grid(row=3, column=2)
+        self.profiler_color_button = tk.Button(configFrame, text='カラー表示(Nボタンで色変更)', command=profiler_color_button_clicked)
+        self.profiler_color_button.grid(row=3, column=3)
+        self.norm = tk.Button(configFrame, text='正規化 (5fps程度)', command=norm_clicked)
+        self.norm.grid(row=3, column=4)
 
         self.selectdir = tk.Button(saveFrame,text='Select', command=selectdir_clicked)
         self.selectdir.grid(row=0, column=2)
         self.select_cleardir = tk.Button(saveFrame, text='Clear', command=select_cleardir_clicked)
         self.select_cleardir.grid(row=0, column=3)
+        '''
         self.button1 = tk.Button(saveFrame, text='表示', command=button1_clicked)
-        self.button1.grid(row=1, column=2)
+        self.button1.grid(row=2, column=0)
         self.showcolor = tk.Button(saveFrame, text='表示 (カラーNボタンで変更可)', command=showcolor_clicked)
-        self.showcolor.grid(row=1, column=3)
-        self.save = tk.Button(saveFrame,text='保存 (識別中でも使用可)', command=save_clicked)
-        self.save.grid(row=1, column=4)
-        self.norm = tk.Button(saveFrame, text='正規化 (5fps程度しか出なくなります)', command=norm_clicked)
-        self.norm.grid(row=0, column=4)
+        self.showcolor.grid(row=2, column=1)
+        '''
+        self.save = tk.Button(saveFrame,text='画像として保存', command=save_clicked)
+        self.save.grid(row=1, column=3)
+
+        self.video_save = tk.Button(saveFrame, text='録画 ', command=video_save_clicked)
+        self.video_save.grid(row=5, column=2)
+        self.video_save = tk.Button(saveFrame, text='録画(カラー) ', command=color_video_save_clicked)
+        self.video_save.grid(row=5, column=3)
 
         self.detectellipse_button = tk.Button(profilerFrame, text='ビーム検出', command=detectellipse_button_clicked)
-        self.detectellipse_button.grid(row=2, column=2)
-        self.profiler_button = tk.Button(profilerFrame, text='プロファイル', command=profiler_button_clicked)
-        self.profiler_button.grid(row=3, column=2)
-        self.profiler_color_button = tk.Button(profilerFrame, text='プロファイル(カラー)', command=profiler_color_button_clicked)
-        self.profiler_color_button.grid(row=3, column=3)
+        self.detectellipse_button.grid(row=3, column=2)
+
     def ellipseFrame(self):
-        configelipseFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="共通設定（下記の二つで使います。）")
+        configelipseFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="共通設定")
         configelipseFrame.pack(anchor=tk.W,pady=5)
         ellipseparamFrame = tk.LabelFrame(self.tab2, bd=2, relief="ridge", text="ビームの形を取得")
         ellipseparamFrame.pack(anchor=tk.W,pady=5)
@@ -477,7 +534,7 @@ class GUI:
         self.statusbutton.grid(row=1,column=5)
         self.testbutton = tk.Button(dnnFrame,text='Realtime-Predict', command=dnn_test_clicked)
         self.testbutton.grid(row=2,column=4)
-        self.testcolorbutton = tk.Button(dnnFrame, text='Realtime-Predict (カラーマップ)', command=dnn_test_color_clicked)
+        self.testcolorbutton = tk.Button(dnnFrame, text='Realtime-Predict (カラー)', command=dnn_test_color_clicked)
         self.testcolorbutton.grid(row=2, column=5)
 
 
