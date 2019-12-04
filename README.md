@@ -101,14 +101,14 @@ $ python -c "import PySpin"
 ```
 
 以下Pyspinに関して詳細追記  
-(https://flir.app.boxcn.net/v/SpinnakerSDK/folder/73503062578)からSDKをインストール。  
+[SDKダウンロードページ](https://flir.app.boxcn.net/v/SpinnakerSDK/folder/73503062578)からSDK(development)をインストール。  
 注意事項：VisualStudioとdriverのインストールを忘れずに！   
-(https://flir.app.boxcn.net/v/SpinnakerSDK/folder/73501875299)からバージョン選択後ダウンロード。  
+[PySpinダウンロードページ](https://flir.app.boxcn.net/v/SpinnakerSDK/folder/73501875299)からバージョン選択後ダウンロード。  
 (python 3.6.8 だとspinnaker_python-1.27.0.48-cp36-cp36m-win_amd64.zipをダウンロード)  
 その後whlファイルからインストール
 
 ```
-$ python -m pip install /User/....../spinnaker_python-1.27.0.48-cp36-cp36m-win_amd64.whl
+$ python -m pip install C:\User\......spinnaker_python-1.27.0.48-cp36-cp36m-win_amd64.whl
 ```
 
 `tensorflow==1.15`をインストールする
