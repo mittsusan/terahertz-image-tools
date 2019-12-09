@@ -9,13 +9,13 @@ import matplotlib.pyplot as plt
 from module.show_infrared_camera import ShowInfraredCamera
 
 class CNN:
-    def __init__(self, classnum, traindir, im_size_width, im_size_height, flip):
+    def __init__(self, classnum, traindir, im_size_width, im_size_height, flip, epoch):
         self.conv1 = 30
         self.conv2 = 20
         self.conv3 = 10
         self.dense1 = 100
         self.dense2 = classnum
-        self.nb_epoch = 100
+        self.nb_epoch = epoch
         self.nb_batch = 64
         self.learning_rate = 1e-3
         self.classnum = classnum
@@ -26,12 +26,10 @@ class CNN:
         self.model_structure = 'convreluMax' + str(self.conv1) + '_convreluMax' + str(self.conv2) + '_convreluMax' + str(
             self.conv3) + '_dense' + str(self.dense1) + 'relu_softmax'
         self.f_log = self.traindir + 'width' + str(
-            self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(
-            self.flip) + '/' + self.model_structure + '_lr' + str(self.learning_rate) + '/Adam_epoch' + str(
+            self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + self.flip + '/' + self.model_structure + '_lr' + str(self.learning_rate) + '/Adam_epoch' + str(
             self.nb_epoch) + '_batch' + str(self.nb_batch)
         self.f_model = self.traindir  + 'width' + str(
-            im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(
-            self.flip) + '/' + self.model_structure + '_lr' + str(self.learning_rate) + '/Adam_epoch' + str(
+            im_size_width) + 'height' + str(self.im_size_height) + 'flip' + self.flip + '/' + self.model_structure + '_lr' + str(self.learning_rate) + '/Adam_epoch' + str(
             self.nb_epoch) + '_batch' + str(self.nb_batch)
         os.makedirs(self.f_model, exist_ok=True)
         os.makedirs(self.f_log, exist_ok=True)

@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
@@ -18,9 +19,10 @@ class GUI:
         self.create_reference = CreateReference()
         self.accumulate_intensity = AccumulateIntensity()
         self.root = tk.Tk()
-        self.iconfile = Path('icon/favicon.ico')
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        self.iconfile = os.path.join(cwd, 'icon/favicon.ico')
         self.root.iconbitmap(default=self.iconfile)
-        self.nb = ttk.Notebook(width=1040, height=530)
+        self.nb = ttk.Notebook(width=1040, height=520)
         self.tab1 = tk.Frame(self.nb)
         self.tab2 = tk.Frame(self.nb)
         self.nb.add(self.tab1, text='近赤外カメラ (リアルタイム)')
@@ -32,6 +34,7 @@ class GUI:
         self.ellipseFrame()
         self.dnn_frame()
         self.normflag = False
+
     def cameraFrame(self):
         configFrame = tk.LabelFrame(self.tab1,bd=2,relief="ridge",text="カメラの共通設定")
         configFrame.pack(anchor=tk.W,pady=5)
@@ -46,6 +49,8 @@ class GUI:
         lbl.grid(row=1, column=0)
         lbl = tk.Label(configFrame,text='露出[um]を選択してください。')
         lbl.grid(row=2,column=0)
+        lbl = tk.Label(configFrame, text='画像を左右反転させるか選択してください。')
+        lbl.grid(row=3, column=0)
 
         lbl = tk.Label(saveFrame,text='保存先を選択してください。')
         lbl.grid(row=0, column=0)
@@ -85,6 +90,18 @@ class GUI:
                                               text=self.trigger_rdo_txt[i])
             self.trigger_rdo.grid(row=0,column=i+1,sticky=tk.W)
 
+
+        self.flip_rdo_txt = ['normal', 'flip']
+
+        self.flip_rdo_var = tk.IntVar()
+
+        self.flip_rdo_var.set(0)
+        for i in range(len(self.flip_rdo_txt)):
+            self.flip_rdo = tk.Radiobutton(configFrame, value=i, variable=self.flip_rdo_var,
+                                              text=self.flip_rdo_txt[i])
+            self.flip_rdo.grid(row=3, column=i + 1, sticky=tk.W)
+
+
         # ゲインのテキストボックスを出現させる
         self.gainEntry = tk.Entry(configFrame,width=20)  # widthプロパティで大きさを変える
         self.gainEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
@@ -123,31 +140,6 @@ class GUI:
         threshEntry.insert(tk.END, u'0')  # 最初から文字を入れておく
         threshEntry.grid(row=3, column=1, sticky=tk.W)
 
-
-        def button1_clicked():
-            try:
-                self.cvv = None
-                self.cvv = ShowInfraredCamera()
-                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
-                gainEntry_value = int(self.gainEntry.get())
-                expEntry_value = int(self.expEntry.get())
-                th = threading.Thread(target=self.cvv.show_beam, args=(trigger_type,gainEntry_value,expEntry_value))
-                th.start()
-            except RuntimeError:
-                messagebox.showerror('connecterror','USBにカメラが接続されていません。')
-
-
-        def showcolor_clicked():
-            try:
-                self.cvv = None
-                self.cvv = ShowInfraredCamera()
-                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
-                gainEntry_value = int(self.gainEntry.get())
-                expEntry_value = int(self.expEntry.get())
-                th = threading.Thread(target=self.cvv.show_beam_color, args=(trigger_type,gainEntry_value,expEntry_value))
-                th.start()
-            except RuntimeError:
-                messagebox.showerror('connecterror','USBにカメラが接続されていません。')
 
         def selectdir_clicked():
             savepath = tkfd.askdirectory()
@@ -221,9 +213,10 @@ class GUI:
                 self.cvv = None
                 self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                flip = self.flip_rdo_txt[self.flip_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
-                th = threading.Thread(target=self.cvv.beam_profiler, args=(trigger_type, gainEntry_value, expEntry_value))
+                th = threading.Thread(target=self.cvv.beam_profiler, args=(trigger_type, gainEntry_value, expEntry_value, flip))
                 th.start()
             except RuntimeError:
                 messagebox.showerror('connecterror', 'USBにカメラが接続されていません。')
@@ -233,10 +226,11 @@ class GUI:
                 self.cvv = None
                 self.cvv = ShowInfraredCamera()
                 trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                flip = self.flip_rdo_txt[self.flip_rdo_var.get()]
                 gainEntry_value = int(self.gainEntry.get())
                 expEntry_value = int(self.expEntry.get())
                 th = threading.Thread(target=self.cvv.beam_profiler_color, args=(
-                trigger_type, gainEntry_value, expEntry_value))
+                trigger_type, gainEntry_value, expEntry_value, flip))
                 th.start()
             except RuntimeError:
                 messagebox.showerror('connecterror', 'USBにカメラが接続されていません。')
@@ -253,22 +247,17 @@ class GUI:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
 
         self.profiler_button = tk.Button(configFrame, text='表示', command=profiler_button_clicked)
-        self.profiler_button.grid(row=3, column=2)
+        self.profiler_button.grid(row=3, column=3)
         self.profiler_color_button = tk.Button(configFrame, text='カラー表示(Nボタンで色変更)', command=profiler_color_button_clicked)
-        self.profiler_color_button.grid(row=3, column=3)
-        self.norm = tk.Button(configFrame, text='正規化 (5fps程度)', command=norm_clicked)
-        self.norm.grid(row=3, column=4)
+        self.profiler_color_button.grid(row=3, column=4)
+        self.norm = tk.Button(configFrame, text='正規化 (fps低下)', command=norm_clicked)
+        self.norm.grid(row=3, column=5)
 
         self.selectdir = tk.Button(saveFrame,text='Select', command=selectdir_clicked)
         self.selectdir.grid(row=0, column=2)
         self.select_cleardir = tk.Button(saveFrame, text='Clear', command=select_cleardir_clicked)
         self.select_cleardir.grid(row=0, column=3)
-        '''
-        self.button1 = tk.Button(saveFrame, text='表示', command=button1_clicked)
-        self.button1.grid(row=2, column=0)
-        self.showcolor = tk.Button(saveFrame, text='表示 (カラーNボタンで変更可)', command=showcolor_clicked)
-        self.showcolor.grid(row=2, column=1)
-        '''
+
         self.save = tk.Button(saveFrame,text='画像として保存', command=save_clicked)
         self.save.grid(row=1, column=3)
 
@@ -424,29 +413,22 @@ class GUI:
         dnnFrame = tk.LabelFrame(self.tab1, width=600,height=200,bd=2, relief="ridge",
                                           text="Deep Learning (Supervised Learning)")
         dnnFrame.pack(anchor=tk.W,pady=5)
-
-        lbl = tk.Label(dnnFrame,text='ビームの数or画像')
-        lbl.grid(row=0, column=0,sticky=tk.W,pady=2)
+        lbl = tk.Label(dnnFrame, text='学習回数 (epoch)')
+        lbl.grid(row=0, column=0, sticky=tk.W)
         lbl = tk.Label(dnnFrame,text='訓練(train)フォルダ')
         lbl.grid(row=1, column=0,sticky=tk.W)
         lbl = tk.Label(dnnFrame,text='検証(validation)フォルダ (任意)')
         lbl.grid(row=2, column=0,sticky=tk.W)
 
         # テキストボックス
+        epochEntry = tk.Entry(dnnFrame, width=20)  # widthプロパティで大きさを変える
+        epochEntry.grid(row=0, column=1, sticky=tk.W)
+        epochEntry.insert(tk.END, u'300')
         trainEntry = tk.Entry(dnnFrame,width=80)  # widthプロパティで大きさを変える
         #trainEntry.insert(tk.END,u'C:/Users/ryoya/PycharmProjects/terahertz-image-tools/sample/train')
         trainEntry.grid(row=1,column=1,sticky=tk.W)
         valEntry = tk.Entry(dnnFrame,width=80)  # widthプロパティで大きさを変える
         valEntry.grid(row=2,column=1,sticky=tk.W)
-
-        # ラジオボタンのラベルをリスト化する
-        rdo_txt = ['image','1', '2', '3', '4', '5', '6', '7', '8', '9 ', '10']
-        # ラジオボタンの状態
-        rdo_var = tk.IntVar()
-        # ラジオボタンを動的に作成して配置
-        for i in range(len(rdo_txt)):
-            rdo = tk.Radiobutton(dnnFrame, value=i, variable=rdo_var, text=rdo_txt[i])
-            rdo.place(relx=0.12+0.07*i,rely=0)
 
         def trainfolderbutton_clicked():
             trainpath = tkfd.askdirectory(title='訓練(train)フォルダを選択してください')
@@ -475,29 +457,25 @@ class GUI:
             if len(trainEntry.get()) == 0:
                 messagebox.showerror('エラー','訓練フォルダが選択されていません。')
             else:
-                imtype = rdo_txt[rdo_var.get()]
-                if imtype == 'image':
-                    self.trainbutton.config(text="訓練中",state="disable")
-                    dnn_classifier = DNNClasifier(imtype,trainEntry.get(),valEntry.get())
-                    th = threading.Thread(target=dnn_classifier.train)#dnn_classifier.train()のように書くとフリーズします！
-                    th.start()
-                else:
-                    messagebox.showerror('selecterror','現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
+                self.trainbutton.config(text="訓練中",state="disable")
+                flip = self.flip_rdo_txt[self.flip_rdo_var.get()]
+                dnn_classifier = DNNClasifier(trainEntry.get(), valEntry.get(), flip, int(epochEntry.get()))
+                th = threading.Thread(target=dnn_classifier.train)#dnn_classifier.train()のように書くとフリーズします！
+                th.start()
+
+
 
         def dnn_test_clicked():
             try:
                 self.cvv = None
                 self.cvv = ShowInfraredCamera()
-                imtype = rdo_txt[rdo_var.get()]
-                if imtype == 'image':
-                    trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
-                    gainEntry_value = int(self.gainEntry.get())
-                    expEntry_value = int(self.expEntry.get())
-                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get())
-                    th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value, self.cvv))
-                    th.start()
-                else:
-                    messagebox.showerror('selecterror', '現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
+                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                gainEntry_value = int(self.gainEntry.get())
+                expEntry_value = int(self.expEntry.get())
+                flip = self.flip_rdo_txt[self.flip_rdo_var.get()]
+                dnn_classifier = DNNClasifier(trainEntry.get(), valEntry.get(), flip, int(epochEntry.get()))
+                th = threading.Thread(target=dnn_classifier.test, args=(trigger_type,gainEntry_value,expEntry_value, self.cvv))
+                th.start()
 
             except RuntimeError:
                 messagebox.showerror('connecterror','USBにカメラが接続されていません。')
@@ -506,16 +484,14 @@ class GUI:
             try:
                 self.cvv = None
                 self.cvv = ShowInfraredCamera()
-                imtype = rdo_txt[rdo_var.get()]
-                if imtype == 'image':
-                    trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
-                    gainEntry_value = int(self.gainEntry.get())
-                    expEntry_value = int(self.expEntry.get())
-                    dnn_classifier = DNNClasifier(imtype, trainEntry.get(), valEntry.get())
-                    th = threading.Thread(target=dnn_classifier.test_color, args=(trigger_type,gainEntry_value,expEntry_value, self.cvv))
-                    th.start()
-                else:
-                    messagebox.showerror('selecterror', '現在ビームの積算の値を用いた識別は実装されていません。imageを選択してください。')
+
+                trigger_type = self.trigger_rdo_txt[self.trigger_rdo_var.get()]
+                gainEntry_value = int(self.gainEntry.get())
+                expEntry_value = int(self.expEntry.get())
+                flip = self.flip_rdo_txt[self.flip_rdo_var.get()]
+                dnn_classifier = DNNClasifier(trainEntry.get(), valEntry.get(), flip, int(epochEntry.get()))
+                th = threading.Thread(target=dnn_classifier.test_color, args=(trigger_type,gainEntry_value,expEntry_value, self.cvv))
+                th.start()
 
             except RuntimeError:
                 messagebox.showerror('connecterror','USBにカメラが接続されていません。')

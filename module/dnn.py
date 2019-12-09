@@ -9,15 +9,14 @@ from module.imread_imwrite_japanese import ImreadImwriteJapanese
 
 
 class DNNClasifier:
-    def __init__(self,imtype,traindir,valdir):
-        self.imtype = imtype
+    def __init__(self, traindir, valdir, flip, epoch):
         self.sampledir = os.path.dirname(traindir)
         self.traindir = traindir
         self.valdir = valdir
-        if self.imtype == 'image':
-            self.im_size_width = 30
-            self.im_size_height = 44
-            self.flip = 1  # 1の場合画像を左右反転,0の場合、上下反転、-1の場合上下左右反転、Noneでなし。
+        self.im_size_width = 30
+        self.im_size_height = 44
+        self.epoch = epoch
+        self.flip = flip
         self.im_jp = ImreadImwriteJapanese
     def train(self):
         def load_pic(data_path):
@@ -40,14 +39,10 @@ class DNNClasifier:
                             #image = cv2.imread(i,cv2.IMREAD_GRAYSCALE)
                             image = self.im_jp.imread(i,cv2.IMREAD_GRAYSCALE)
                             image = cv2.resize(image, (self.im_size_width, self.im_size_height))  # サイズ変更して圧縮
-                            if self.flip == None:
+                            if self.flip == 'normal':
                                 pass
-                            elif self.flip == 0:
-                                image = cv2.flip(image, 0)  # 画像を上下反転
-                            elif self.flip == 1:
+                            elif self.flip == 'flip':
                                 image = cv2.flip(image, 1)  # 画像を左右反転
-                            elif self.flip == -1:
-                                image = cv2.flip(image, -1)  # 画像を上下左右反転
                             file_list.append(image)
                         elif ext == '.txt':
                             print('処理予定{}'.format(i))
@@ -89,22 +84,17 @@ class DNNClasifier:
 
             return x_all, y_all, file_list
 
-        if self.imtype == 'image':
 
-            npy_train_data_dir = self.traindir  + 'width' + str(
-                self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(self.flip)
 
-            if len(self.valdir) == 0:
-                pass
-            else:
-                npy_val_data_dir = self.valdir  + 'width' + str(
-                    self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + str(self.flip)
+        npy_train_data_dir = self.traindir  + 'width' + str(
+            self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + self.flip
+
+        if len(self.valdir) == 0:
+            pass
         else:
-            npy_train_data_dir = self.traindir  + self.imtype
-            if len(self.valdir) == 0:
-                pass
-            else:
-                npy_val_data_dir = self.valdir  + self.imtype
+            npy_val_data_dir = self.valdir  + 'width' + str(
+                self.im_size_width) + 'height' + str(self.im_size_height) + 'flip' + self.flip
+
 
         #サンプル配下ディレクトリに入る
         train_data_Xnpy = npy_train_data_dir + 'X.npy'
@@ -166,32 +156,26 @@ class DNNClasifier:
                 np.save(npy_val_data_dir + 'X', X_test)
                 np.save(npy_val_data_dir + 'Y', Y_test)
 
-        print(X_train.shape)
-
-        if self.imtype == 'image':
-
-            X_train.resize(X_train.shape[0], X_train.shape[1], X_train.shape[2], 1)
-            if len(self.valdir) == 0:
-                CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
-                    self.flip).cnn_train_noneval(X_train, Y_train)
-            else:
-                X_test.resize(X_test.shape[0], X_test.shape[1], X_test.shape[2], 1)
-                CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
-                self.flip).cnn_train(X_train, Y_train, X_test, Y_test)
-
+        X_train.resize(X_train.shape[0], X_train.shape[1], X_train.shape[2], 1)
+        if len(self.valdir) == 0:
+            CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
+                self.flip, self.epoch).cnn_train_noneval(X_train, Y_train)
         else:
-            pass
+            X_test.resize(X_test.shape[0], X_test.shape[1], X_test.shape[2], 1)
+            CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
+            self.flip, self.epoch).cnn_train(X_train, Y_train, X_test, Y_test)
+
 
     def test(self, trigger_type, gain, exp, cvv):
         # class名読み込み
         with open(os.path.join(self.sampledir, 'classname.txt')) as f:
             class_list = [s.strip() for s in f.readlines()]
         CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test(trigger_type, gain, exp, class_list, cvv)
+            self.flip, self.epoch).cnn_test(trigger_type, gain, exp, class_list, cvv)
 
     def test_color(self, trigger_type, gain, exp, cvv):
         # class名読み込み
         with open(os.path.join(self.sampledir, 'classname.txt')) as f:
             class_list = [s.strip() for s in f.readlines()]
         CNN(len(class_list), self.traindir, self.im_size_width, self.im_size_height,
-            self.flip).cnn_test_color(trigger_type, gain, exp, class_list, cvv)
+            self.flip, self.epoch).cnn_test_color(trigger_type, gain, exp, class_list, cvv)

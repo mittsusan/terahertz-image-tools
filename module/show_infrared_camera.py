@@ -9,13 +9,17 @@ from module.fwhm import FWHM
 import cv2
 import time
 import numpy as np
+import os
 from datetime import datetime as dt
+import glob
 
 
 class ShowInfraredCamera():
     def __init__(self):
         self.cam_manager = CameraManager()
+        self.initsavecount = 0
         self.savecount = 0
+        self.existnumber = 0
         self.colormap_table_count = 0
         self.colormap_table = [
             ['COLORMAP_JET', cv2.COLORMAP_JET],
@@ -36,77 +40,13 @@ class ShowInfraredCamera():
         self.video_saveflag = False
         self.im_jp = ImreadImwriteJapanese
 
-    def show_beam(self, trigger, gain, exp):
+    def beam_profiler(self, trigger, gain, exp, flip):
 
         if trigger == "software":
             self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
         elif trigger == "hardware":
             self.cam_manager.choose_trigger_type(TriggerType.HARDWARE)
 
-        self.cam_manager.turn_on_trigger_mode()
-
-        self.cam_manager.choose_acquisition_mode(AcquisitionMode.CONTINUOUS)
-
-        self.cam_manager.choose_auto_exposure_mode(AutoExposureMode.OFF)
-        self.cam_manager.set_exposure_time(exp)
-
-        self.cam_manager.choose_auto_gain_mode(AutoGainMode.OFF)
-        self.cam_manager.set_gain(gain)
-
-        self.cam_manager.start_acquisition()
-
-        while True:
-            # 処理前の時刻
-            t1 = time.time()
-            if trigger == "software":
-                self.cam_manager.execute_software_trigger()
-
-            frame = self.cam_manager.get_next_image()
-            if frame is None:
-                continue
-
-            if self.norm == True:
-                frame = self.min_max_normalization(frame)
-
-            cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(frame, (800, 800)))
-
-            if self.savecount != 0:
-                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
-                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
-                self.savecount += -1
-                print('saveimage:{:0>6}'.format(self.savecount))
-
-            if self.video_saveflag == True:
-                self.out.write(cv2.resize(frame,(self.width, self.height)))
-
-            k = cv2.waitKey(1) & 0xFF
-            if k == ord('q'):
-                if self.video_saveflag == True:
-                    self.out.release()
-                    self.video_saveflag = False
-                    print('録画終了')
-                cv2.destroyAllWindows()
-                print('Complete Cancel')
-                break
-
-            # 処理後の時刻
-            t2 = time.time()
-
-            # 経過時間を表示
-            try:
-                freq = 1 / (t2 - t1)
-                print(f"フレームレート：{freq}fps")
-            except ZeroDivisionError:
-                pass
-
-        self.cam_manager.stop_acquisition()
-
-    def beam_profiler(self, trigger, gain, exp):
-
-        if trigger == "software":
-            self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
-        elif trigger == "hardware":
-            self.cam_manager.choose_trigger_type(TriggerType.HARDWARE)
 
         self.cam_manager.turn_on_trigger_mode()
 
@@ -136,6 +76,12 @@ class ShowInfraredCamera():
             if self.norm == True:
                 frame = self.min_max_normalization(frame)
 
+            if flip == 'normal':
+                pass
+            elif flip == 'flip':
+                frame = cv2.flip(frame, 1)  # 画像を左右反転
+
+
             if self.detectflag == 1:
                 ellipses = self.create_reference.realtime_create_reference(frame, self.numbeams, self.minsize, self.maxsize, self.binthresh)
                 if len(ellipses) == self.numbeams:
@@ -149,11 +95,26 @@ class ShowInfraredCamera():
 
             cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(frame, (800, 800)))
 
-            if self.savecount != 0:
-                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
-                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
-                self.savecount += -1
-                print('saveimage:{:0>6}'.format(self.savecount))
+            if self.initsavecount == 0 and self.savecount == 0:
+                pass
+            elif self.initsavecount != self.savecount:
+                if os.path.exists(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber)):
+                    for existnumber in range(len(glob.glob(self.savepath + '/*.png'))):
+                        self.existnumber = existnumber + 1
+                    print('同じファイルが存在しているので、ファイルを新規作成します')
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+                else:
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+            elif self.initsavecount == self.savecount:
+                self.initsavecount = self.savecount = 0
+                self.existnumber = 0
+                print('Initialize savecount')
 
             if self.video_saveflag == True:
                 self.out.write(cv2.resize(frame, (self.width, self.height)))
@@ -179,87 +140,7 @@ class ShowInfraredCamera():
 
         self.cam_manager.stop_acquisition()
 
-    def show_beam_color(self,trigger,gain,exp):
-
-        if trigger == "software":
-            self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
-        elif trigger == "hardware":
-            self.cam_manager.choose_trigger_type(TriggerType.HARDWARE)
-
-        self.cam_manager.turn_on_trigger_mode()
-
-        self.cam_manager.choose_acquisition_mode(AcquisitionMode.CONTINUOUS)
-
-        self.cam_manager.choose_auto_exposure_mode(AutoExposureMode.OFF)
-        self.cam_manager.set_exposure_time(exp)
-
-        self.cam_manager.choose_auto_gain_mode(AutoGainMode.OFF)
-        self.cam_manager.set_gain(gain)
-
-        self.cam_manager.start_acquisition()
-
-
-        while True:
-            # 処理前の時刻
-            t1 = time.time()
-            if trigger == "software":
-                self.cam_manager.execute_software_trigger()
-
-            frame = self.cam_manager.get_next_image()
-            if frame is None:
-                continue
-
-            if self.norm == True:
-                frame = self.min_max_normalization(frame)
-            # 疑似カラーを付与
-
-            apply_color_map_image = cv2.applyColorMap(frame, self.colormap_table[self.colormap_table_count % len(self.colormap_table)][1])
-
-            cv2.putText(apply_color_map_image,
-                        self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
-                        (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
-
-            cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(apply_color_map_image, (800, 800)))
-
-
-
-            if self.savecount != 0:
-                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
-                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
-                self.savecount += -1
-                print('saveimage:{:0>6}'.format(self.savecount))
-
-            if self.video_saveflag == True:
-                self.out.write(cv2.resize(apply_color_map_image, (self.width, self.height)))
-
-            k = cv2.waitKey(1) & 0xFF
-            if k == ord('q'):
-                if self.video_saveflag == True:
-                    self.out.release()
-                    self.video_saveflag = False
-                    print('録画終了')
-                cv2.destroyAllWindows()
-                print('Complete Cancel')
-                break
-
-            elif k == ord('n'):  # N
-                self.colormap_table_count = self.colormap_table_count + 1
-
-
-
-            # 処理後の時刻
-            t2 = time.time()
-
-            # 経過時間を表示
-            try:
-                freq = 1 / (t2 - t1)
-                print(f"フレームレート：{freq}fps")
-            except ZeroDivisionError:
-                pass
-
-        self.cam_manager.stop_acquisition()
-
-    def beam_profiler_color(self, trigger, gain, exp):
+    def beam_profiler_color(self, trigger, gain, exp, flip):
 
         if trigger == "software":
             self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
@@ -293,6 +174,12 @@ class ShowInfraredCamera():
 
             if self.norm == True:
                 frame = self.min_max_normalization(frame)
+
+            if flip == 'normal':
+                pass
+            elif flip == 'flip':
+                frame = cv2.flip(frame, 1)  # 画像を左右反転
+
             # 疑似カラーを付与
             apply_color_map_image = cv2.applyColorMap(frame, self.colormap_table[
                 self.colormap_table_count % len(self.colormap_table)][1])
@@ -318,11 +205,26 @@ class ShowInfraredCamera():
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(apply_color_map_image, (800, 800)))
 
-            if self.savecount != 0:
-                # cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
-                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
-                self.savecount += -1
-                print('saveimage:{:0>6}'.format(self.savecount))
+            if self.initsavecount == 0 and self.savecount == 0:
+                pass
+            elif self.initsavecount != self.savecount:
+                if os.path.exists(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber)):
+                    for existnumber in range(len(glob.glob(self.savepath + '/*.png'))):
+                        self.existnumber = existnumber + 1
+                    print('同じファイルが存在しているので、ファイルを新規作成します')
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+                else:
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+            elif self.initsavecount == self.savecount:
+                self.initsavecount = self.savecount = 0
+                self.existnumber = 0
+                print('Initialize savecount')
 
             if self.video_saveflag == True:
                 self.out.write(cv2.resize(apply_color_map_image, (self.width, self.height)))
@@ -368,13 +270,12 @@ class ShowInfraredCamera():
         self.cam_manager.start_acquisition()
 
         font = cv2.FONT_HERSHEY_PLAIN
-        fontsize = 8
-        samplename_position_x = 360
+        fontsize = 6
+        samplename_position_x = probability_position_x = 90
         samplename_position_y = 120
-        probability_position_x = 360
         probability_position_y = 220
-        x_move = 1100
-        font_scale = 6
+        x_move = 800
+        font_scale = 5
         while True:
             # 処理前の時刻
             t1 = time.time()
@@ -388,14 +289,10 @@ class ShowInfraredCamera():
             if self.norm == True:
                 frame = self.min_max_normalization(frame)
 
-            if flip == None:
+            if flip == 'normal':
                 pass
-            elif flip == 0:
-                frame = cv2.flip(frame, 0)  # 画像を上下反転
-            elif flip == 1:
+            elif flip == 'flip':
                 frame = cv2.flip(frame, 1)  # 画像を左右反転
-            elif flip == -1:
-                frame = cv2.flip(frame, -1)  # 画像を上下左右反転
 
             resize_image = cv2.resize(frame, (im_size_width, im_size_height))
             # print(resize_image)
@@ -427,11 +324,26 @@ class ShowInfraredCamera():
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(frame, (800, 800)))
 
-            if self.savecount != 0:
-                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
-                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), frame)
-                self.savecount += -1
-                print('saveimage:{:0>6}'.format(self.savecount))
+            if self.initsavecount == 0 and self.savecount == 0:
+                pass
+            elif self.initsavecount != self.savecount:
+                if os.path.exists(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber)):
+                    for existnumber in range(len(glob.glob(self.savepath + '/*.png'))):
+                        self.existnumber = existnumber + 1
+                    print('同じファイルが存在しているので、ファイルを新規作成します')
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+                else:
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+            elif self.initsavecount == self.savecount:
+                self.initsavecount = self.savecount = 0
+                self.existnumber = 0
+                print('Initialize savecount')
 
             if self.video_saveflag == True:
                 self.out.write(cv2.resize(frame, (self.width, self.height)))
@@ -478,15 +390,13 @@ class ShowInfraredCamera():
 
         self.cam_manager.start_acquisition()
 
-
         font = cv2.FONT_HERSHEY_PLAIN
-        fontsize = 8
-        samplename_position_x = 360
+        fontsize = 6
+        samplename_position_x = probability_position_x = 90
         samplename_position_y = 120
-        probability_position_x = 360
         probability_position_y = 220
-        x_move = 1100
-        font_scale = 6
+        x_move = 800
+        font_scale = 5
         while True:
             # 処理前の時刻
             t1 = time.time()
@@ -501,14 +411,10 @@ class ShowInfraredCamera():
                 frame = self.min_max_normalization(frame)
 
             # 読み込んだフレームを書き込み
-            if flip == None:
+            if flip == 'normal':
                 pass
-            elif flip == 0:
-                frame = cv2.flip(frame, 0)  # 画像を上下反転
-            elif flip == 1:
+            elif flip == 'flip':
                 frame = cv2.flip(frame, 1)  # 画像を左右反転
-            elif flip == -1:
-                frame = cv2.flip(frame, -1)  # 画像を上下左右反転
 
             resize_image = cv2.resize(frame, (im_size_width, im_size_height))
 
@@ -550,12 +456,26 @@ class ShowInfraredCamera():
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(apply_color_map_image, (800, 800)))
 
-
-            if self.savecount != 0:
-                #cv2.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
-                self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.savecount), apply_color_map_image)
-                self.savecount += -1
-                print('saveimage:{:0>6}'.format(self.savecount))
+            if self.initsavecount == 0 and self.savecount == 0:
+                pass
+            elif self.initsavecount != self.savecount:
+                if os.path.exists(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber)):
+                    for existnumber in range(len(glob.glob(self.savepath + '/*.png'))):
+                        self.existnumber = existnumber + 1
+                    print('同じファイルが存在しているので、ファイルを新規作成します')
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+                else:
+                    self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
+                                       frame)
+                    self.initsavecount += 1
+                    print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
+            elif self.initsavecount == self.savecount:
+                self.initsavecount = self.savecount = 0
+                self.existnumber = 0
+                print('Initialize savecount')
 
             if self.video_saveflag == True:
                 self.out.write(cv2.resize(apply_color_map_image, (self.width, self.height)))
