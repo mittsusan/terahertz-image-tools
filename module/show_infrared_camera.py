@@ -47,7 +47,6 @@ class ShowInfraredCamera():
         elif trigger == "hardware":
             self.cam_manager.choose_trigger_type(TriggerType.HARDWARE)
 
-
         self.cam_manager.turn_on_trigger_mode()
 
         self.cam_manager.choose_acquisition_mode(AcquisitionMode.CONTINUOUS)
@@ -81,9 +80,9 @@ class ShowInfraredCamera():
             elif flip == 'flip':
                 frame = cv2.flip(frame, 1)  # 画像を左右反転
 
-
             if self.detectflag == 1:
-                ellipses = self.create_reference.realtime_create_reference(frame, self.numbeams, self.minsize, self.maxsize, self.binthresh)
+                ellipses = self.create_reference.realtime_create_reference(frame, self.numbeams, self.minsize,
+                                                                           self.maxsize, self.binthresh)
                 if len(ellipses) == self.numbeams:
                     frame = self.fwhm.realtime_fwhm(frame, ellipses)
                     self.detectflag = 2
@@ -93,7 +92,7 @@ class ShowInfraredCamera():
             elif self.detectflag == 2:
                 frame = self.fwhm.realtime_fwhm(frame, ellipses)
 
-            cv2.imshow("Please push Q button when you want to close the window.",cv2.resize(frame, (800, 800)))
+            cv2.imshow("Please push Q button when you want to close the window.", cv2.resize(frame, (800, 800)))
 
             if self.initsavecount == 0 and self.savecount == 0:
                 pass
@@ -195,8 +194,6 @@ class ShowInfraredCamera():
                     self.detectflag = 0
             elif self.detectflag == 2:
                 apply_color_map_image = self.fwhm.realtime_fwhm(apply_color_map_image, ellipses)
-
-
 
             cv2.putText(apply_color_map_image,
                         self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
@@ -371,7 +368,8 @@ class ShowInfraredCamera():
         self.cam_manager.stop_acquisition()
         print('Stopped Camera')
 
-    def realtime_identification_color(self,classnamelist,model,trigger,gain,exp,im_size_width,im_size_height,flip):
+    def realtime_identification_color(self, classnamelist, model, trigger, gain, exp, im_size_width, im_size_height,
+                                      flip):
 
         if trigger == "software":
             self.cam_manager.choose_trigger_type(TriggerType.SOFTWARE)
@@ -428,30 +426,33 @@ class ShowInfraredCamera():
             predict = model.predict(X)
 
             # 疑似カラーを付与
-            apply_color_map_image = cv2.applyColorMap(frame, self.colormap_table[self.colormap_table_count % len(self.colormap_table)][1])
+            apply_color_map_image = cv2.applyColorMap(frame, self.colormap_table[
+                self.colormap_table_count % len(self.colormap_table)][1])
 
             for (i, pre) in enumerate(predict):
                 y = pre.argmax()  # preがそれぞれの予測確率で一番高いものを取ってきている。Y_testはone-hotベクトル
 
-                cv2.putText(apply_color_map_image, 'Predict sample', (samplename_position_x, samplename_position_y), font, fontsize, (255, 255, 255), font_scale, cv2.LINE_AA)
-                cv2.putText(apply_color_map_image, 'Probability', (probability_position_x, probability_position_y), font, fontsize,
+                cv2.putText(apply_color_map_image, 'Predict sample', (samplename_position_x, samplename_position_y),
+                            font, fontsize, (255, 255, 255), font_scale, cv2.LINE_AA)
+                cv2.putText(apply_color_map_image, 'Probability', (probability_position_x, probability_position_y),
+                            font, fontsize,
                             (255, 255, 255), font_scale, cv2.LINE_AA)
                 pretext = classnamelist[y]
-                cv2.putText(apply_color_map_image, pretext, (samplename_position_x+x_move,samplename_position_y), font, fontsize, (255, 255, 255), font_scale, cv2.LINE_AA)
-
+                cv2.putText(apply_color_map_image, pretext, (samplename_position_x + x_move, samplename_position_y),
+                            font, fontsize, (255, 255, 255), font_scale, cv2.LINE_AA)
 
                 if pre[y] > 0.9:  # 確率が90%を超える時
-                    cv2.putText(apply_color_map_image, '{}%'.format(round(pre[y] * 100)), (probability_position_x+x_move, probability_position_y), font, fontsize,
+                    cv2.putText(apply_color_map_image, '{}%'.format(round(pre[y] * 100)),
+                                (probability_position_x + x_move, probability_position_y), font, fontsize,
                                 (0, 0, 255), font_scale, cv2.LINE_AA)
                 else:
-                    cv2.putText(apply_color_map_image, '{}%'.format(round(pre[y] * 100)), (probability_position_x+x_move, probability_position_y), font, fontsize,
+                    cv2.putText(apply_color_map_image, '{}%'.format(round(pre[y] * 100)),
+                                (probability_position_x + x_move, probability_position_y), font, fontsize,
                                 (255, 255, 255), font_scale, cv2.LINE_AA)
-
 
             cv2.putText(apply_color_map_image,
                         self.colormap_table[self.colormap_table_count % len(self.colormap_table)][0],
                         (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
-
 
             cv2.imshow("Please push Q button when you want to close the window.",
                        cv2.resize(apply_color_map_image, (800, 800)))
@@ -506,11 +507,11 @@ class ShowInfraredCamera():
         self.cam_manager.stop_acquisition()
         print('Stopped Camera')
 
-    def save(self,savecount, savepath):
+    def save(self, savecount, savepath):
         self.savecount = savecount
         self.savepath = savepath
 
-    def video_save(self, savepath, fps , height, width, color):
+    def video_save(self, savepath, fps, height, width, color):
         self.video_savepath = savepath
         self.fps = fps
         self.height = height
@@ -528,7 +529,7 @@ class ShowInfraredCamera():
         self.video_saveflag = False
         print('録画終了')
 
-    def min_max_normalization(self,frame):
+    def min_max_normalization(self, frame):
         frame = frame.astype(int)
         vmin = frame.min()
         vmax = frame.max()
@@ -549,13 +550,3 @@ class ShowInfraredCamera():
         self.maxsize = maxsize
         self.binthresh = binthresh
         self.detectflag = 1
-
-
-
-
-
-
-
-
-
-
