@@ -213,12 +213,12 @@ class ShowInfraredCamera():
                         self.existnumber = existnumber + 1
                     print('同じファイルが存在しているので、ファイルを新規作成します')
                     self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
-                                       frame)
+                                       apply_color_map_image)
                     self.initsavecount += 1
                     print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
                 else:
                     self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
-                                       frame)
+                                       apply_color_map_image)
                     self.initsavecount += 1
                     print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
             elif self.initsavecount == self.savecount:
@@ -464,12 +464,12 @@ class ShowInfraredCamera():
                         self.existnumber = existnumber + 1
                     print('同じファイルが存在しているので、ファイルを新規作成します')
                     self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
-                                       frame)
+                                       apply_color_map_image)
                     self.initsavecount += 1
                     print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
                 else:
                     self.im_jp.imwrite(self.savepath + '/{:0>6}.png'.format(self.initsavecount + self.existnumber),
-                                       frame)
+                                       apply_color_map_image)
                     self.initsavecount += 1
                     print('saveimage:{:0>6}'.format(self.initsavecount + self.existnumber))
             elif self.initsavecount == self.savecount:
