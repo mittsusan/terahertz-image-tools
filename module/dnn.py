@@ -39,10 +39,12 @@ class DNNClasifier:
                             #image = cv2.imread(i,cv2.IMREAD_GRAYSCALE)
                             image = self.im_jp.imread(i,cv2.IMREAD_GRAYSCALE)
                             image = cv2.resize(image, (self.im_size_width, self.im_size_height))  # サイズ変更して圧縮
+                            '''
                             if self.flip == 'normal':
                                 pass
                             elif self.flip == 'flip':
                                 image = cv2.flip(image, 1)  # 画像を左右反転
+                            '''
                             file_list.append(image)
                         elif ext == '.txt':
                             print('処理予定{}'.format(i))

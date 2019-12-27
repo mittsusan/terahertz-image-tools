@@ -525,8 +525,9 @@ class ShowInfraredCamera():
         print('録画開始')
 
     def video_finish(self):
-        self.out.release()
         self.video_saveflag = False
+        self.out.release()
+        cv2.destroyAllWindows()
         print('録画終了')
 
     def min_max_normalization(self, frame):

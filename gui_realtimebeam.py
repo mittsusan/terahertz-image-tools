@@ -156,7 +156,7 @@ class GUI:
 
                 else:
                     self.cvv.save(savecount,saveEntry.get())
-                    messagebox.showinfo('Updated setting to save','カメラ画像を保存しました。（カメラが起動していない場合は保存予約になります。）')
+                    messagebox.showinfo('Updated setting to save','カメラ画像を保存開始。（ターミナルで保存完了出来たかを確認してください）')
 
             except AttributeError:
                 messagebox.showerror('starterror', 'カメラが起動していません。')
