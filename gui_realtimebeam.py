@@ -47,7 +47,7 @@ class GUI:
         lbl.grid(row=0,column=0)
         lbl = tk.Label(configFrame,text='ゲイン[db]を選択してください。')
         lbl.grid(row=1, column=0)
-        lbl = tk.Label(configFrame,text='露出[um]を選択してください。')
+        lbl = tk.Label(configFrame,text='露出[us]を選択してください。')
         lbl.grid(row=2,column=0)
         lbl = tk.Label(configFrame, text='画像を左右反転させるか選択してください。')
         lbl.grid(row=3, column=0)
